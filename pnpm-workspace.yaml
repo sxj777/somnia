@@ -1,7 +1,7 @@
-onlyBuiltDependencies:
-  - bufferutil
-  - esbuild
-  - keccak
-  - secp256k1
-  - unrs-resolver
-  - utf-8-validate
+allowBuilds:
+  bufferutil: true
+  esbuild: true
+  keccak: true
+  secp256k1: true
+  unrs-resolver: true
+  utf-8-validate: true
