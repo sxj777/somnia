@@ -126,6 +126,34 @@ const starterDreams: Dream[] = [
   }
 ];
 
+function SomniaMark() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 64 64" width="42" height="42" aria-hidden="true" focusable="false">
+      <rect width="64" height="64" rx="12" fill="#111316" />
+      <path
+        d="M40.8 17.5C31.1 18.2 23.5 26.2 23.5 36c0 4.8 1.8 9.1 4.8 12.4C19.8 46.6 13.5 39 13.5 30c0-9.9 7.6-18.1 17.3-18.9 4-.3 7.4 1 10 3.4 1.1 1 .7 2.9 0 3Z"
+        fill="#F8F4EA"
+      />
+      <path
+        d="M22 42.5c8.5 7.7 21.5 6.8 28.8-1.9"
+        fill="none"
+        stroke="#0B8F7D"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <path
+        d="m44 29 5.4 5.4L58 24.8"
+        fill="none"
+        stroke="#D5A036"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="4.2"
+      />
+      <circle cx="48" cy="13.5" r="3.5" fill="#BD5B4B" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
   const [dreams, setDreams] = useState(starterDreams);
@@ -293,7 +321,7 @@ export default function Home() {
     <main className="site-shell">
       <header className="site-header">
         <a className="brand" href="#home" aria-label="Somnia home">
-          <span className="brand-mark">S</span>
+          <SomniaMark />
           <span>
             <strong>Somnia</strong>
             <small>{tr(lang, "brandLine")}</small>
@@ -528,7 +556,7 @@ export default function Home() {
 
       <footer className="site-footer">
         <div className="brand">
-          <span className="brand-mark">S</span>
+          <SomniaMark />
           <span>
             <strong>Somnia</strong>
             <small>{tr(lang, "footerLine")}</small>
