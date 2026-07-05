@@ -2,10 +2,11 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
+  ArrowRight,
   CalendarClock,
-  FileCode2,
+  CheckCircle2,
+  FileText,
   Globe2,
-  Hammer,
   Heart,
   Megaphone,
   ShieldCheck,
@@ -98,7 +99,7 @@ const starterDreams: Dream[] = [
     category: "AI",
     summary: {
       en: "Upload construction photos and receive a first-pass checklist for budget, quality, and risks.",
-      zh: "上传施工照片，自动生成预算、质量和风险的初步检查清单。"
+      zh: "上传施工照片，生成预算、质量和风险的初步检查清单。"
     },
     author: "0x42a1...c931",
     signals: 26,
@@ -115,7 +116,7 @@ const starterDreams: Dream[] = [
     category: "Public Goods",
     summary: {
       en: "A transparent board where community funds help makers ship small tools, zines, and prototypes.",
-      zh: "一个透明看板，用社区资金帮助创作者交付小工具、内容作品和原型。"
+      zh: "用透明看板帮助创作者交付小工具、内容作品和原型。"
     },
     author: "0x19f7...ab04",
     signals: 19,
@@ -132,7 +133,6 @@ export default function Home() {
   const [isLoadingDreams, setIsLoadingDreams] = useState(false);
   const [sort, setSort] = useState<"hot" | "new" | "signals">("hot");
   const [placement, setPlacement] = useState<"standard" | "featured">("standard");
-  const [activeFeature, setActiveFeature] = useState(0);
   const [status, setStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const { isConnected, address } = useAccount();
@@ -181,7 +181,6 @@ export default function Home() {
     () => dreams.filter((dream) => Date.parse(dream.expiresAt) > Date.now()),
     [dreams]
   );
-  const featuredDreams = liveDreams.filter((dream) => dream.featured);
   const selectedFee = placement === "featured" ? Number(featuredFeeUsdc) : Number(publishFeeUsdc);
   const selectedFeeUnits = placement === "featured" ? featuredFeeUnits : publishFeeUnits;
   const totalSignals = liveDreams.reduce((sum, dream) => sum + dream.signals, 0);
@@ -193,16 +192,6 @@ export default function Home() {
     if (sort === "new") return cloned.sort((a, b) => b.id - a.id);
     return cloned.sort((a, b) => b.signals * 2 + b.id - (a.signals * 2 + a.id));
   }, [liveDreams, sort]);
-
-  useEffect(() => {
-    if (featuredDreams.length <= 1) return;
-    const timer = window.setInterval(() => {
-      setActiveFeature((current) => (current + 1) % featuredDreams.length);
-    }, 4200);
-    return () => window.clearInterval(timer);
-  }, [featuredDreams.length]);
-
-  const featuredDream = featuredDreams[activeFeature % Math.max(featuredDreams.length, 1)];
 
   async function publishDream(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -301,26 +290,23 @@ export default function Home() {
   }
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">S</div>
-          <div>
+    <main className="site-shell">
+      <header className="site-header">
+        <a className="brand" href="#home" aria-label="Somnia home">
+          <span className="brand-mark">S</span>
+          <span>
             <strong>Somnia</strong>
-            <span>{tr(lang, "brandLine")}</span>
-          </div>
-        </div>
-
-        <nav className="nav-stack" aria-label="Somnia navigation">
-          <a href="#featured">{tr(lang, "navFeatured")}</a>
+            <small>{tr(lang, "brandLine")}</small>
+          </span>
+        </a>
+        <nav className="nav-links" aria-label="Primary navigation">
+          <a href="#how">{tr(lang, "navHow")}</a>
           <a href="#plaza">{tr(lang, "navPlaza")}</a>
           <a href="#publish">{tr(lang, "navPublish")}</a>
-          <a href="#vault">{tr(lang, "navVault")}</a>
-          <a href="#review">{tr(lang, "navReview")}</a>
+          <a href="#rewards">{tr(lang, "navRewards")}</a>
+          <a href="#faq">{tr(lang, "navFaq")}</a>
         </nav>
-
-        <section className="side-section">
-          <p className="eyebrow">{tr(lang, "language")}</p>
+        <div className="header-actions">
           <div className="segmented">
             <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")} type="button">
               EN
@@ -329,213 +315,231 @@ export default function Home() {
               中文
             </button>
           </div>
-        </section>
-
-        <section className="side-section wallet-section">
-          <p className="eyebrow">{tr(lang, "wallet")}</p>
           <ConnectButton label={tr(lang, "connectWallet")} showBalance={false} />
-        </section>
-      </aside>
+        </div>
+      </header>
 
-      <section className="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Somnia Alpha</p>
-            <h1>{tr(lang, "heroTitle")}</h1>
-            <p>{tr(lang, "heroBody")}</p>
+      <section id="home" className="hero-section">
+        <div className="hero-copy">
+          <p className="eyebrow">
+            <Globe2 size={15} />
+            {tr(lang, "liveAlpha")}
+          </p>
+          <h1>{tr(lang, "heroTitle")}</h1>
+          <p>{tr(lang, "heroBody")}</p>
+          <div className="hero-actions">
+            <a className="primary-link" href="#publish">
+              {tr(lang, "primaryCta")}
+              <ArrowRight size={17} />
+            </a>
+            <a className="secondary-link" href="#how">
+              {tr(lang, "secondaryCta")}
+            </a>
           </div>
-          <span className="chain-pill">
-            <Globe2 size={16} />
-            {tr(lang, "baseReady")}
-          </span>
-        </header>
+        </div>
 
-        <section className="metrics">
-          <Metric icon={<Sparkles size={19} />} label={tr(lang, "totalDreams")} value={liveDreams.length} />
-          <Metric icon={<Megaphone size={19} />} label={tr(lang, "featuredFee")} value={`${featuredFeeUsdc} USDC`} />
-          <Metric icon={<Heart size={19} />} label={tr(lang, "totalSignals")} value={totalSignals} />
-          <Metric icon={<Wallet size={19} />} label={tr(lang, "publishFee")} value={`${publishFeeUsdc} USDC`} />
-        </section>
-
-        <section id="featured" className="spotlight-panel">
-          <div className="spotlight-copy">
-            <p className="eyebrow">{tr(lang, "spotlight")}</p>
-            <h2>{featuredDream ? featuredDream.title[lang] : tr(lang, "featuredPlacement")}</h2>
-            <p>{featuredDream ? featuredDream.summary[lang] : tr(lang, "featuredPlacementText")}</p>
-            <div className="spotlight-meta">
-              <span>
-                <Megaphone size={16} />
-                {featuredFeeUsdc} USDC
-              </span>
-              <span>
-                <CalendarClock size={16} />
-                {tr(lang, "displayWindow")}: {tr(lang, "threeDays")}
-              </span>
-              {featuredDream ? <span>{formatDate(featuredDream.expiresAt, lang)}</span> : null}
-            </div>
+        <div className="hero-product" aria-label="Somnia product preview">
+          <div className="preview-top">
+            <span />
+            <span />
+            <span />
           </div>
-          <div className="spotlight-dots" aria-label="Featured dream carousel">
-            {featuredDreams.map((dream, index) => (
+          <div className="preview-spotlight">
+            <small>{tr(lang, "featuredPlacement")}</small>
+            <strong>{starterDreams[0].title[lang]}</strong>
+            <p>{starterDreams[0].summary[lang]}</p>
+          </div>
+          <div className="preview-grid">
+            <MiniStat label={tr(lang, "publishFee")} value={`${publishFeeUsdc} USDC`} />
+            <MiniStat label={tr(lang, "featuredFee")} value={`${featuredFeeUsdc} USDC`} />
+            <MiniStat label={tr(lang, "totalSignals")} value={totalSignals} />
+          </div>
+        </div>
+      </section>
+
+      <section className="metrics">
+        <Metric icon={<Sparkles size={19} />} label={tr(lang, "totalDreams")} value={liveDreams.length} />
+        <Metric icon={<Megaphone size={19} />} label={tr(lang, "featuredFee")} value={`${featuredFeeUsdc} USDC`} />
+        <Metric icon={<Heart size={19} />} label={tr(lang, "totalSignals")} value={totalSignals} />
+        <Metric icon={<Wallet size={19} />} label={tr(lang, "publishFee")} value={`${publishFeeUsdc} USDC`} />
+      </section>
+
+      <section id="how" className="section-block">
+        <div className="section-intro">
+          <p className="eyebrow">{tr(lang, "howEyebrow")}</p>
+          <h2>{tr(lang, "howTitle")}</h2>
+        </div>
+        <div className="step-grid">
+          <StepCard number="01" title={tr(lang, "howOneTitle")} body={tr(lang, "howOneBody")} />
+          <StepCard number="02" title={tr(lang, "howTwoTitle")} body={tr(lang, "howTwoBody")} />
+          <StepCard number="03" title={tr(lang, "howThreeTitle")} body={tr(lang, "howThreeBody")} />
+        </div>
+      </section>
+
+      <section className="product-grid">
+        <section id="publish" className="panel publish-panel">
+          <PanelHeading eyebrow={tr(lang, "navPublish")} title={tr(lang, "createDream")} tag={`${selectedFee} USDC`} />
+          <form className="dream-form" onSubmit={publishDream}>
+            <div className="placement-grid" role="radiogroup" aria-label={tr(lang, "placement")}>
               <button
-                aria-label={`Show featured dream ${index + 1}`}
-                className={index === activeFeature ? "active" : ""}
-                key={dream.id}
-                onClick={() => setActiveFeature(index)}
+                className={placement === "standard" ? "active" : ""}
+                onClick={() => setPlacement("standard")}
                 type="button"
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="grid-two">
-          <section id="publish" className="panel">
-            <PanelHeading eyebrow={tr(lang, "navPublish")} title={tr(lang, "createDream")} tag={`${selectedFee} USDC`} />
-            <form className="dream-form" onSubmit={publishDream}>
-              <div className="placement-grid" role="radiogroup" aria-label={tr(lang, "placement")}>
-                <button
-                  className={placement === "standard" ? "active" : ""}
-                  onClick={() => setPlacement("standard")}
-                  type="button"
-                >
-                  <strong>{tr(lang, "standardPlacement")}</strong>
-                  <span>{publishFeeUsdc} USDC · {tr(lang, "standardPlacementText")}</span>
-                </button>
-                <button
-                  className={placement === "featured" ? "active" : ""}
-                  onClick={() => setPlacement("featured")}
-                  type="button"
-                >
-                  <strong>{tr(lang, "featuredPlacement")}</strong>
-                  <span>{featuredFeeUsdc} USDC · {tr(lang, "featuredPlacementText")}</span>
-                </button>
-              </div>
-
-              <label>
-                <span>{tr(lang, "title")}</span>
-                <input name="title" maxLength={72} placeholder={tr(lang, "titlePlaceholder")} required />
-              </label>
-              <label>
-                <span>{tr(lang, "category")}</span>
-                <select name="category" required>
-                  {categories.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {tr(lang, category.labelKey)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{tr(lang, "summary")}</span>
-                <input name="summary" maxLength={120} placeholder={tr(lang, "summaryPlaceholder")} required />
-              </label>
-              <label>
-                <span>{tr(lang, "note")}</span>
-                <textarea name="note" maxLength={560} placeholder={tr(lang, "notePlaceholder")} rows={5} required />
-              </label>
-
-              <div className="split-grid">
-                {feeSplit.map((item) => (
-                  <div key={item.key}>
-                    <span>{tr(lang, item.key)}</span>
-                    <strong>{splitAmount(selectedFee, item.percent)} USDC</strong>
-                  </div>
-                ))}
-              </div>
-
-              <button className="primary-button" disabled={isPublishing} type="submit">
-                {isPublishing ? tr(lang, "publishing") : tr(lang, "publishDream")}
+              >
+                <strong>{tr(lang, "standardPlacement")}</strong>
+                <span>{publishFeeUsdc} USDC · {tr(lang, "standardPlacementText")}</span>
               </button>
-              <p className="status-line">{status || tr(lang, "alphaText")}</p>
-            </form>
-          </section>
+              <button
+                className={placement === "featured" ? "active" : ""}
+                onClick={() => setPlacement("featured")}
+                type="button"
+              >
+                <strong>{tr(lang, "featuredPlacement")}</strong>
+                <span>{featuredFeeUsdc} USDC · {tr(lang, "featuredPlacementText")}</span>
+              </button>
+            </div>
 
-          <section id="vault" className="panel">
-            <PanelHeading eyebrow={tr(lang, "navVault")} title={tr(lang, "feeDistribution")} tag="50 / 30 / 20" />
-            <div className="vault-stack">
-              {feeSplit.map((item) => (
-                <div className="vault-row" key={item.key}>
-                  <div>
-                    <span>{tr(lang, item.key)}</span>
-                    <strong>{splitAmount(gross, item.percent)} USDC</strong>
-                  </div>
-                  <div className="bar-track">
-                    <span style={{ width: `${item.percent}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="rule-box">
-              <ShieldCheck size={20} />
-              <div>
-                <strong>{tr(lang, "noInvestment")}</strong>
-                <p>{tr(lang, "noInvestmentText")}</p>
-              </div>
-            </div>
-          </section>
+            <label>
+              <span>{tr(lang, "title")}</span>
+              <input name="title" maxLength={72} placeholder={tr(lang, "titlePlaceholder")} required />
+            </label>
+            <label>
+              <span>{tr(lang, "category")}</span>
+              <select name="category" required>
+                {categories.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {tr(lang, category.labelKey)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>{tr(lang, "summary")}</span>
+              <input name="summary" maxLength={120} placeholder={tr(lang, "summaryPlaceholder")} required />
+            </label>
+            <label>
+              <span>{tr(lang, "note")}</span>
+              <textarea name="note" maxLength={560} placeholder={tr(lang, "notePlaceholder")} rows={5} required />
+            </label>
+
+            <button className="primary-button" disabled={isPublishing} type="submit">
+              {isPublishing ? tr(lang, "publishing") : tr(lang, "publishDream")}
+            </button>
+            <p className="status-line">{status || tr(lang, "alphaText")}</p>
+          </form>
         </section>
 
-        <section id="plaza" className="panel">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">{tr(lang, "plaza")}</p>
-              <h2>{tr(lang, "communitySignals")}</h2>
-            </div>
-            <div className="plaza-controls">
-              <span className="tag">{tr(lang, isLoadingDreams ? "loadingOnchainDreams" : dataSource === "onchain" ? "onchainData" : "sampleData")}</span>
-              <div className="segmented compact">
-                {(["hot", "new", "signals"] as const).map((item) => (
-                  <button className={sort === item ? "active" : ""} key={item} onClick={() => setSort(item)} type="button">
-                    {tr(lang, item)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="dream-grid">
-            {sortedDreams.map((dream) => (
-              <article className={`dream-card ${dream.featured ? "featured" : ""}`} key={dream.id}>
-                <div className="card-top">
-                  <span>{tr(lang, categories.find((item) => item.value === dream.category)?.labelKey || "catAI")}</span>
-                  <small>Dream #{dream.id}</small>
-                </div>
+        <section id="rewards" className="panel rewards-panel">
+          <PanelHeading eyebrow={tr(lang, "navRewards")} title={tr(lang, "rewardsTitle")} tag="50 / 30 / 20" />
+          <p className="panel-copy">{tr(lang, "rewardsBody")}</p>
+          <div className="vault-stack">
+            {feeSplit.map((item) => (
+              <div className="vault-row" key={item.key}>
                 <div>
-                  {dream.featured ? <div className="featured-badge">{tr(lang, "featuredBadge")}</div> : null}
-                  <h3>{dream.title[lang]}</h3>
-                  <p>{dream.summary[lang]}</p>
+                  <span>{tr(lang, item.key)}</span>
+                  <strong>{splitAmount(gross, item.percent)} USDC</strong>
                 </div>
-                <div className="expiry-line">
-                  <CalendarClock size={15} />
-                  {tr(lang, "liveUntil")}: {formatDate(dream.expiresAt, lang)}
+                <div className="bar-track">
+                  <span style={{ width: `${item.percent}%` }} />
                 </div>
-                <div className="card-bottom">
-                  <small>{dream.author}</small>
-                  <button type="button" onClick={() => setDreams((current) => current.map((item) => item.id === dream.id ? { ...item, signals: item.signals + 1 } : item))}>
-                    {tr(lang, "signals")} {dream.signals}
-                  </button>
-                </div>
-              </article>
+              </div>
             ))}
           </div>
-        </section>
-
-        <section id="review" className="panel contract-panel">
-          <div>
-            <p className="eyebrow">{tr(lang, "alphaMode")}</p>
-            <h2>{tr(lang, "pointsLater")}</h2>
-            <p>{tr(lang, "pointsLaterText")}</p>
-          </div>
-          <div className="contract-badges">
-            <span>
-              <FileCode2 size={16} />
-              DreamRegistry
-            </span>
-            <span>
-              <Hammer size={16} />
-              IPFS + USDC
-            </span>
+          <div className="rule-box">
+            <ShieldCheck size={20} />
+            <div>
+              <strong>{tr(lang, "noInvestment")}</strong>
+              <p>{tr(lang, "noInvestmentText")}</p>
+            </div>
           </div>
         </section>
       </section>
+
+      <section id="plaza" className="panel">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">{tr(lang, "plaza")}</p>
+            <h2>{tr(lang, "communitySignals")}</h2>
+          </div>
+          <div className="plaza-controls">
+            <span className="tag">{tr(lang, isLoadingDreams ? "loadingOnchainDreams" : dataSource === "onchain" ? "onchainData" : "sampleData")}</span>
+            <div className="segmented compact">
+              {(["hot", "new", "signals"] as const).map((item) => (
+                <button className={sort === item ? "active" : ""} key={item} onClick={() => setSort(item)} type="button">
+                  {tr(lang, item)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="dream-grid">
+          {sortedDreams.map((dream) => (
+            <article className={`dream-card ${dream.featured ? "featured" : ""}`} key={dream.id}>
+              <div className="card-top">
+                <span>{tr(lang, categories.find((item) => item.value === dream.category)?.labelKey || "catAI")}</span>
+                <small>Dream #{dream.id}</small>
+              </div>
+              <div>
+                {dream.featured ? <div className="featured-badge">{tr(lang, "featuredBadge")}</div> : null}
+                <h3>{dream.title[lang]}</h3>
+                <p>{dream.summary[lang]}</p>
+              </div>
+              <div className="expiry-line">
+                <CalendarClock size={15} />
+                {tr(lang, "liveUntil")}: {formatDate(dream.expiresAt, lang)}
+              </div>
+              <div className="card-bottom">
+                <small>{dream.author}</small>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDreams((current) =>
+                      current.map((item) => item.id === dream.id ? { ...item, signals: item.signals + 1 } : item)
+                    )
+                  }
+                >
+                  {tr(lang, "signals")} {dream.signals}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="faq" className="section-block faq-block">
+        <div className="section-intro">
+          <p className="eyebrow">FAQ</p>
+          <h2>{tr(lang, "faqTitle")}</h2>
+        </div>
+        <div className="faq-grid">
+          <FaqItem question={tr(lang, "faqOneQ")} answer={tr(lang, "faqOneA")} />
+          <FaqItem question={tr(lang, "faqTwoQ")} answer={tr(lang, "faqTwoA")} />
+          <FaqItem question={tr(lang, "faqThreeQ")} answer={tr(lang, "faqThreeA")} />
+        </div>
+      </section>
+
+      <section className="risk-banner">
+        <FileText size={22} />
+        <div>
+          <strong>{tr(lang, "riskTitle")}</strong>
+          <p>{tr(lang, "riskBody")}</p>
+        </div>
+      </section>
+
+      <footer className="site-footer">
+        <div className="brand">
+          <span className="brand-mark">S</span>
+          <span>
+            <strong>Somnia</strong>
+            <small>{tr(lang, "footerLine")}</small>
+          </span>
+        </div>
+        <div className="footer-links">
+          <a href="#how">{tr(lang, "navHow")}</a>
+          <a href="#publish">{tr(lang, "navPublish")}</a>
+          <a href="#faq">{tr(lang, "navFaq")}</a>
+        </div>
+      </footer>
     </main>
   );
 }
@@ -623,12 +627,32 @@ function formatDate(value: string, lang: Lang) {
   }).format(new Date(value));
 }
 
+function MiniStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="mini-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string | number }) {
   return (
     <article className="metric">
       <div>{icon}</div>
       <span>{label}</span>
       <strong>{value}</strong>
+    </article>
+  );
+}
+
+function StepCard({ number, title, body }: { number: string; title: string; body: string }) {
+  return (
+    <article className="step-card">
+      <span>{number}</span>
+      <CheckCircle2 size={22} />
+      <h3>{title}</h3>
+      <p>{body}</p>
     </article>
   );
 }
@@ -642,5 +666,14 @@ function PanelHeading({ eyebrow, title, tag }: { eyebrow: string; title: string;
       </div>
       <span className="tag">{tag}</span>
     </div>
+  );
+}
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  return (
+    <article className="faq-item">
+      <h3>{question}</h3>
+      <p>{answer}</p>
+    </article>
   );
 }
