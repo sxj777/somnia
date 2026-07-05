@@ -8,7 +8,7 @@ This is the formal Alpha foundation for Somnia: a wallet-first, onchain Dream pu
 
 - A standard Dream Plaza listing costs 10 USDC and stays visible for 3 days.
 - A homepage spotlight listing costs 100 USDC and rotates in the featured carousel for 3 days.
-- The points system is reserved for V2 after the publish and placement flow is stable.
+- The points system is the next required MVP before fundraising or larger community rollout.
 - 50 percent goes to Somnia Treasury.
 - 30 percent goes to Dream Vault.
 - 20 percent goes to Reviewer Rewards.
@@ -48,8 +48,10 @@ For local UI testing, the app can run without a deployed contract. Publishing wi
 2. Connect Pinata or another IPFS pinning provider.
 3. Test both 10 USDC standard publish and 100 USDC featured publish with test USDC.
 4. Add event indexing for Dream Plaza.
-5. Audit the contract before real funds.
-6. Deploy to Base mainnet only after legal review.
+5. Launch the Somnia Points MVP with profile cards, rankings, and clear non-investment language.
+6. Audit the contract before real funds.
+7. Deploy to Base mainnet only after legal review.
 
 See `BASE_SEPOLIA_DEPLOYMENT.md` for the detailed testnet deployment flow.
 See `VERCEL_DEPLOYMENT.md` for the Vercel, environment variable, and custom domain checklist.
+See `docs/LITEPAPER_0.1_ZH.md` for the first Chinese Litepaper and points-system framing.
