@@ -99,7 +99,7 @@ export const copy: Record<Lang, Copy> = {
     pointsRules: "Point rules",
     pointsRulesTag: "No token promise",
     pointsLeaderboard: "Leaderboard",
-    pointsLeaderboardTag: "Dreams + signals",
+    pointsLeaderboardTag: "Somnia Points",
     pointsDisclaimer:
       "Somnia Points are platform reputation and participation records. They are not tokens, are not transferable, are not investment rights, and do not promise equity, yield, airdrops, or redemption.",
     rewardsTitle: "Transparent fees, no hidden promise",
@@ -213,7 +213,7 @@ export const copy: Record<Lang, Copy> = {
     pointsRules: "积分规则",
     pointsRulesTag: "不承诺代币",
     pointsLeaderboard: "排行榜",
-    pointsLeaderboardTag: "Dream + signal",
+    pointsLeaderboardTag: "Somnia Points",
     pointsDisclaimer:
       "Somnia Points 是平台内声誉和参与度记录，不是代币，不可转让，不是投资权益，也不承诺股权、收益、空投或兑换。",
     rewardsTitle: "费用透明，不暗示收益",

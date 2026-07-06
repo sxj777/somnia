@@ -308,7 +308,7 @@ export default function Home() {
   const totalSignals = liveDreams.reduce((sum, dream) => sum + dream.signals, 0);
   const gross = liveDreams.reduce((sum, dream) => sum + dream.paid, 0);
   const pointsLevel = getPointsLevel(pointsLedger?.total ?? 0);
-  const leaderboard = useMemo(() => buildLeaderboard(liveDreams, pointsLedger, address, lang), [liveDreams, pointsLedger, address, lang]);
+  const leaderboard = useMemo(() => buildLeaderboard(pointsLedger, address, lang), [pointsLedger, address, lang]);
 
   const sortedDreams = useMemo(() => {
     const cloned = [...liveDreams];
@@ -974,43 +974,24 @@ function getPointsLevel(total: number) {
   };
 }
 
-function buildLeaderboard(dreams: Dream[], ledger: PointsLedger | undefined, address: string | undefined, lang: Lang): Leader[] {
-  const creators = new Map<string, { dreams: number; signals: number; score: number }>();
-
-  dreams.forEach((dream) => {
-    const current = creators.get(dream.author) ?? { dreams: 0, signals: 0, score: 0 };
-    creators.set(dream.author, {
-      dreams: current.dreams + 1,
-      signals: current.signals + dream.signals,
-      score: current.score + 100 + dream.signals * 2 + (dream.featured ? 50 : 0)
-    });
-  });
-
-  const leaders: Leader[] = Array.from(creators.entries()).map(([label, value]) => ({
-    label,
-    score: value.score,
-    detail:
-      lang === "zh"
-        ? `${value.dreams} 个 Dream · ${value.signals} 个 signal`
-        : `${value.dreams} Dreams · ${value.signals} signals`
-  }));
-
+function buildLeaderboard(ledger: PointsLedger | undefined, address: string | undefined, lang: Lang): Leader[] {
   if (ledger && address) {
-    const label = shortAddress(address);
-    const existing = leaders.find((leader) => leader.label === label);
-    if (existing) {
-      existing.score += ledger.total;
-      existing.detail = lang === "zh" ? "你的 Dream + Somnia Points" : "Your Dreams + Somnia Points";
-    } else {
-      leaders.push({
-        label,
+    return [
+      {
+        label: shortAddress(address),
         score: ledger.total,
         detail: lang === "zh" ? "你的 Somnia Points" : "Your Somnia Points"
-      });
-    }
+      }
+    ];
   }
 
-  return leaders.sort((a, b) => b.score - a.score).slice(0, 5);
+  return [
+    {
+      label: lang === "zh" ? "连接钱包" : "Connect wallet",
+      score: 0,
+      detail: lang === "zh" ? "创建你的积分档案" : "Create your points profile"
+    }
+  ];
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
