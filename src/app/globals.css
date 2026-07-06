@@ -1187,6 +1187,17 @@ a {
   gap: 12px;
 }
 
+.plaza-empty {
+  display: grid;
+  min-height: 150px;
+  grid-column: 1 / -1;
+  place-items: center;
+  margin: 0;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
 .dream-card {
   display: grid;
   min-height: 270px;

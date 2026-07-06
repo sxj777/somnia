@@ -88,6 +88,7 @@ type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 
 const days = 24 * 60 * 60 * 1000;
 const demoStartTime = Date.UTC(2026, 6, 4, 8, 0, 0);
+const shouldLoadOnchainDreams = Boolean(somniaContractAddress);
 
 const starterDreams: Dream[] = [
   {
@@ -173,9 +174,9 @@ function SomniaMark() {
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
-  const [dreams, setDreams] = useState(starterDreams);
-  const [dataSource, setDataSource] = useState<"sample" | "onchain">("sample");
-  const [isLoadingDreams, setIsLoadingDreams] = useState(false);
+  const [dreams, setDreams] = useState<Dream[]>(shouldLoadOnchainDreams ? [] : starterDreams);
+  const [dataSource, setDataSource] = useState<"sample" | "onchain">(shouldLoadOnchainDreams ? "onchain" : "sample");
+  const [isLoadingDreams, setIsLoadingDreams] = useState(shouldLoadOnchainDreams);
   const [sort, setSort] = useState<"hot" | "new" | "signals">("hot");
   const [placement, setPlacement] = useState<"standard" | "featured">("standard");
   const [status, setStatus] = useState("");
@@ -219,7 +220,7 @@ export default function Home() {
           await Promise.all(events.map((event) => dreamFromPublishedLog(event as DreamPublishedLog)))
         ).filter((dream): dream is Dream => Boolean(dream));
 
-        if (!cancelled && loadedDreams.length > 0) {
+        if (!cancelled) {
           setDreams(loadedDreams.sort((a, b) => b.id - a.id));
           setDataSource("onchain");
         }
@@ -745,6 +746,12 @@ export default function Home() {
               </div>
             </article>
           ))}
+          {isLoadingDreams ? (
+            <p className="empty-state plaza-empty">{tr(lang, "loadingOnchainDreams")}</p>
+          ) : null}
+          {!isLoadingDreams && sortedDreams.length === 0 ? (
+            <p className="empty-state plaza-empty">{tr(lang, "noOnchainDreams")}</p>
+          ) : null}
         </div>
       </section>
 
