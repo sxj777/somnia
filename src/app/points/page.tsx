@@ -4,21 +4,34 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { ArrowLeft, CalendarCheck2, CheckCircle2, Clock3, Medal, ShieldCheck, Trophy, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
+import { hasOnchainConfig, somniaContractAddress, somniaDeployBlock } from "@/lib/config";
 import { Lang, tr } from "@/lib/i18n";
 import {
   applyCheckIn,
   awardIdentityPoints,
+  awardPublishedDreamPoints,
   createPointsLedger,
   getLocalDateKey,
   getPointsLevel,
   loadPointsLedger,
+  normalizeAddress,
   pointsRules,
   savePointsLedger,
   shortAddress,
   type PointsLedger,
   type PointsReason
 } from "@/lib/points";
+import { somniaDreamRegistryAbi } from "@/lib/somniaAbi";
+
+type DreamPublishedLog = {
+  args: {
+    dreamId?: bigint;
+    creator?: `0x${string}`;
+  };
+};
+
+type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 
 const accountCopy = {
   en: {
@@ -43,6 +56,7 @@ const accountCopy = {
     never: "Never",
     wallet: "Wallet",
     statusCreated: "Points account loaded.",
+    statusSynced: "Published Dream points synced.",
     statusCheckedIn: "Daily check-in recorded. Somnia Points increased by 10.",
     statusAlready: "You already checked in today.",
     localTag: "Local MVP",
@@ -71,6 +85,7 @@ const accountCopy = {
     never: "暂无",
     wallet: "钱包",
     statusCreated: "积分账户已加载。",
+    statusSynced: "发布 Dream 积分已同步。",
     statusCheckedIn: "每日签到已记录，Somnia Points 增加 10 分。",
     statusAlready: "今天已经签到过了。",
     localTag: "本地 MVP",
@@ -88,6 +103,7 @@ export default function PointsAccountPage() {
   const [pointsLedger, setPointsLedger] = useState<PointsLedger | undefined>();
   const [status, setStatus] = useState("");
   const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -103,6 +119,43 @@ export default function PointsAccountPage() {
   useEffect(() => {
     if (pointsLedger) savePointsLedger(pointsLedger);
   }, [pointsLedger]);
+
+  useEffect(() => {
+    if (!isConnected || !address || !publicClient || !hasOnchainConfig || !somniaContractAddress || !somniaDeployBlock) return;
+
+    let cancelled = false;
+    const accountAddress = address;
+    const client = publicClient;
+    const fromBlock = somniaDeployBlock;
+
+    async function syncPublishedDreamPoints() {
+      try {
+        const latestBlock = await client.getBlockNumber();
+        const events = await getPublishedDreamEvents(client, fromBlock, latestBlock);
+        const ownDreamIds = events
+          .filter((event) => normalizeAddress(event.args.creator || "") === normalizeAddress(accountAddress))
+          .map((event) => event.args.dreamId)
+          .filter((dreamId): dreamId is bigint => typeof dreamId === "bigint")
+          .map((dreamId) => Number(dreamId));
+
+        if (cancelled || ownDreamIds.length === 0) return;
+
+        setPointsLedger((current) => {
+          const base = awardIdentityPoints(current ?? createPointsLedger(accountAddress), accountAddress);
+          return awardPublishedDreamPoints(base, accountAddress, ownDreamIds);
+        });
+        setStatus(copy(lang, "statusSynced"));
+      } catch (error) {
+        console.error("Failed to sync published Dream points", error);
+      }
+    }
+
+    void syncPublishedDreamPoints();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected, lang, publicClient]);
 
   const pointsLevel = getPointsLevel(pointsLedger?.total ?? 0);
   const hasCheckedInToday = pointsLedger?.lastCheckInDate === getLocalDateKey();
@@ -286,4 +339,29 @@ function formatAccountDate(value: string, lang: Lang) {
     minute: "2-digit",
     timeZone: "Asia/Shanghai"
   }).format(new Date(value));
+}
+
+async function getPublishedDreamEvents(
+  publicClient: SomniaPublicClient,
+  fromBlock: bigint,
+  toBlock: bigint
+) {
+  if (fromBlock > toBlock || !somniaContractAddress) return [];
+
+  const events: DreamPublishedLog[] = [];
+  const maxRange = 1900n;
+
+  for (let start = fromBlock; start <= toBlock; start += maxRange + 1n) {
+    const end = start + maxRange > toBlock ? toBlock : start + maxRange;
+    const chunk = await publicClient.getContractEvents({
+      address: somniaContractAddress,
+      abi: somniaDreamRegistryAbi,
+      eventName: "DreamPublished",
+      fromBlock: start,
+      toBlock: end
+    });
+    events.push(...(chunk as DreamPublishedLog[]));
+  }
+
+  return events;
 }

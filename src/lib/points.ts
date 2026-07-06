@@ -159,6 +159,34 @@ export function awardIdentityPoints(ledger: PointsLedger, address: string): Poin
   });
 }
 
+export function awardPublishedDreamPoints(ledger: PointsLedger, address: string, dreamIds: number[]): PointsLedger {
+  const uniqueDreamIds = Array.from(new Set(dreamIds)).filter((dreamId) => Number.isFinite(dreamId));
+  const existingPublishEvents = ledger.events.filter((event) => event.reason === "publish");
+
+  if (existingPublishEvents.length >= uniqueDreamIds.length) return ledger;
+
+  const existingDreamIds = new Set(
+    existingPublishEvents
+      .map((event) => event.dreamId)
+      .filter((dreamId): dreamId is number => typeof dreamId === "number")
+  );
+  const missingDreamIds = uniqueDreamIds.filter((dreamId) => !existingDreamIds.has(dreamId));
+  const maxToAdd = uniqueDreamIds.length - existingPublishEvents.length;
+
+  return missingDreamIds.slice(0, maxToAdd).reduce(
+    (nextLedger, dreamId) =>
+      addPointsEvent(nextLedger, {
+        id: `publish:${normalizeAddress(address)}:${dreamId}`,
+        reason: "publish",
+        points: 100,
+        label: { en: `Published Dream #${dreamId}`, zh: `发布 Dream #${dreamId}` },
+        createdAt: new Date().toISOString(),
+        dreamId
+      }),
+    ledger
+  );
+}
+
 export function applyCheckIn(ledger: PointsLedger, address: string) {
   const checkInDate = getLocalDateKey();
   if (ledger.lastCheckInDate === checkInDate) {

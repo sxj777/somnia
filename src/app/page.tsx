@@ -778,7 +778,7 @@ export default function Home() {
         </div>
         <div className="footer-links">
           <a href="#how">{tr(lang, "navHow")}</a>
-          <a href="#points">{tr(lang, "navPoints")}</a>
+          <a href="/points">{tr(lang, "navPoints")}</a>
           <a href="#publish">{tr(lang, "navPublish")}</a>
           <a href="#faq">{tr(lang, "navFaq")}</a>
         </div>
