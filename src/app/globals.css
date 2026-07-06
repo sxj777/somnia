@@ -526,6 +526,52 @@ a {
   background: linear-gradient(90deg, var(--mint), var(--gold));
 }
 
+.checkin-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.checkin-panel span,
+.checkin-panel strong {
+  display: block;
+}
+
+.checkin-panel span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.checkin-panel strong {
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.checkin-panel button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.checkin-panel button:disabled {
+  cursor: default;
+  opacity: 0.58;
+}
+
 .points-profile p {
   margin: 18px 0 0;
   font-size: 14px;
@@ -997,9 +1043,14 @@ a {
   .section-head,
   .plaza-controls,
   .card-bottom,
+  .checkin-panel,
   .site-footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .checkin-panel button {
+    width: 100%;
   }
 
   .panel,

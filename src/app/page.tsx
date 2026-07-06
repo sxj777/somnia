@@ -45,7 +45,7 @@ type Dream = {
   expiresAt: string;
 };
 
-type PointsReason = "identity" | "publish" | "progress" | "signalSent" | "signalReceived" | "featuredCandidate";
+type PointsReason = "identity" | "checkIn" | "publish" | "progress" | "signalSent" | "signalReceived" | "featuredCandidate";
 
 type PointsEvent = {
   id: string;
@@ -61,6 +61,8 @@ type PointsLedger = {
   total: number;
   events: PointsEvent[];
   signaledDreamIds: number[];
+  lastCheckInDate?: string;
+  checkInStreak: number;
   updatedAt: string;
 };
 
@@ -110,6 +112,12 @@ const pointsRules: Array<{
     points: 20,
     title: { en: "Create identity", zh: "创建身份" },
     body: { en: "Connect a wallet and start a local Somnia profile.", zh: "连接钱包并生成 Somnia 本地身份。" }
+  },
+  {
+    reason: "checkIn",
+    points: 10,
+    title: { en: "Daily check-in", zh: "每日签到" },
+    body: { en: "Check in once per day to keep participation active.", zh: "每天签到一次，保持参与活跃度。" }
   },
   {
     reason: "publish",
@@ -308,6 +316,8 @@ export default function Home() {
   const totalSignals = liveDreams.reduce((sum, dream) => sum + dream.signals, 0);
   const gross = liveDreams.reduce((sum, dream) => sum + dream.paid, 0);
   const pointsLevel = getPointsLevel(pointsLedger?.total ?? 0);
+  const todayKey = getLocalDateKey();
+  const hasCheckedInToday = pointsLedger?.lastCheckInDate === todayKey;
   const leaderboard = useMemo(() => buildLeaderboard(pointsLedger, address, lang), [pointsLedger, address, lang]);
 
   const sortedDreams = useMemo(() => {
@@ -434,6 +444,40 @@ export default function Home() {
         updatedAt: new Date().toISOString()
       };
     });
+  }
+
+  function checkIn() {
+    if (!isConnected || !address) {
+      setStatus(tr(lang, "missingWallet"));
+      return;
+    }
+
+    const checkInDate = getLocalDateKey();
+    if (pointsLedger?.lastCheckInDate === checkInDate) {
+      setStatus(tr(lang, "pointsCheckInAlready"));
+      return;
+    }
+
+    setPointsLedger((current) => {
+      const base = current ?? createPointsLedger(address);
+      const yesterdayKey = getLocalDateKey(-1);
+      const nextStreak = base.lastCheckInDate === yesterdayKey ? base.checkInStreak + 1 : 1;
+      const next = addPointsEvent(base, {
+        id: `checkIn:${normalizeAddress(address)}:${checkInDate}`,
+        reason: "checkIn",
+        points: 10,
+        label: { en: `Daily check-in · Day ${nextStreak}`, zh: `每日签到 · 第 ${nextStreak} 天` },
+        createdAt: new Date().toISOString()
+      });
+
+      return {
+        ...next,
+        lastCheckInDate: checkInDate,
+        checkInStreak: nextStreak,
+        updatedAt: new Date().toISOString()
+      };
+    });
+    setStatus(tr(lang, "pointsCheckInAdded"));
   }
 
   function signalDream(dream: Dream) {
@@ -586,6 +630,15 @@ export default function Home() {
             </div>
             <div className="level-meter" aria-hidden="true">
               <span style={{ width: `${pointsLevel.progress}%` }} />
+            </div>
+            <div className="checkin-panel">
+              <div>
+                <span>{tr(lang, "pointsCheckInStreak")}</span>
+                <strong>{pointsLedger?.checkInStreak ?? 0}</strong>
+              </div>
+              <button disabled={Boolean(hasCheckedInToday)} onClick={checkIn} type="button">
+                {hasCheckedInToday ? tr(lang, "pointsCheckInDone") : tr(lang, "pointsCheckInCta")}
+              </button>
             </div>
             <p>{tr(lang, "pointsProfileText")}</p>
           </div>
@@ -914,6 +967,7 @@ function createPointsLedger(address: string): PointsLedger {
     total: 0,
     events: [],
     signaledDreamIds: [],
+    checkInStreak: 0,
     updatedAt: new Date().toISOString()
   };
 }
@@ -930,7 +984,9 @@ function loadPointsLedger(address: string): PointsLedger {
       ...parsed,
       address: normalizeAddress(address),
       events: Array.isArray(parsed.events) ? parsed.events : [],
-      signaledDreamIds: Array.isArray(parsed.signaledDreamIds) ? parsed.signaledDreamIds : []
+      signaledDreamIds: Array.isArray(parsed.signaledDreamIds) ? parsed.signaledDreamIds : [],
+      checkInStreak: Number.isFinite(parsed.checkInStreak) ? parsed.checkInStreak : 0,
+      lastCheckInDate: typeof parsed.lastCheckInDate === "string" ? parsed.lastCheckInDate : undefined
     };
   } catch {
     return createPointsLedger(address);
@@ -951,6 +1007,15 @@ function addPointsEvent(ledger: PointsLedger, event: PointsEvent): PointsLedger 
     events: [event, ...ledger.events].slice(0, 8),
     updatedAt: event.createdAt
   };
+}
+
+function getLocalDateKey(dayOffset = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + dayOffset);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getPointsLevel(total: number) {
