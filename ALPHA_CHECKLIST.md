@@ -11,7 +11,7 @@
 - Display homepage spotlight carousel, Dream Plaza, Signal counts, expiry time, and fee split.
 - Load published Dreams from `DreamPublished` events and IPFS metadata.
 - Preserve English and Chinese UI.
-- Keep the points system out of V1 while reserving it for V2.
+- Ship a frontend Somnia Points MVP with wallet profile cards, local activity records, signal points, rules, and leaderboard.
 
 ## Required Before Testnet
 
@@ -41,4 +41,5 @@
 - Reviewer Rewards are pooled, not automatically distributed.
 - Dream Vault does not yet create milestones or grants.
 - Signal voting is UI/local in the Alpha page until contract events are indexed.
+- Somnia Points are local frontend records in the MVP until a production indexer or backend ledger is added.
 - Expired Dreams are filtered in the UI, but production still needs an event indexer for reliable discovery.

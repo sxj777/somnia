@@ -8,7 +8,7 @@ This is the formal Alpha foundation for Somnia: a wallet-first, onchain Dream pu
 
 - A standard Dream Plaza listing costs 10 USDC and stays visible for 3 days.
 - A homepage spotlight listing costs 100 USDC and rotates in the featured carousel for 3 days.
-- The points system is the next required MVP before fundraising or larger community rollout.
+- Somnia Points are live as a frontend MVP with wallet profile cards, local activity records, signal points, rules, and leaderboard.
 - 50 percent goes to Somnia Treasury.
 - 30 percent goes to Dream Vault.
 - 20 percent goes to Reviewer Rewards.

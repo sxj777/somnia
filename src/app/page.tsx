@@ -9,9 +9,10 @@ import {
   Globe2,
   Heart,
   Megaphone,
+  Medal,
   ShieldCheck,
   Sparkles,
-  Wallet
+  Trophy
 } from "lucide-react";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
@@ -44,6 +45,31 @@ type Dream = {
   expiresAt: string;
 };
 
+type PointsReason = "identity" | "publish" | "progress" | "signalSent" | "signalReceived" | "featuredCandidate";
+
+type PointsEvent = {
+  id: string;
+  reason: PointsReason;
+  points: number;
+  label: Record<Lang, string>;
+  createdAt: string;
+  dreamId?: number;
+};
+
+type PointsLedger = {
+  address: string;
+  total: number;
+  events: PointsEvent[];
+  signaledDreamIds: number[];
+  updatedAt: string;
+};
+
+type Leader = {
+  label: string;
+  score: number;
+  detail: string;
+};
+
 type DreamMetadata = {
   title?: string;
   category?: string;
@@ -71,6 +97,51 @@ type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 
 const days = 24 * 60 * 60 * 1000;
 const demoStartTime = Date.UTC(2026, 6, 4, 8, 0, 0);
+const pointsStoragePrefix = "somnia.points.v1";
+
+const pointsRules: Array<{
+  reason: PointsReason;
+  points: number;
+  title: Record<Lang, string>;
+  body: Record<Lang, string>;
+}> = [
+  {
+    reason: "identity",
+    points: 20,
+    title: { en: "Create identity", zh: "创建身份" },
+    body: { en: "Connect a wallet and start a local Somnia profile.", zh: "连接钱包并生成 Somnia 本地身份。" }
+  },
+  {
+    reason: "publish",
+    points: 100,
+    title: { en: "Publish a Dream", zh: "发布 Dream" },
+    body: { en: "Submit a valid Dream through the publishing flow.", zh: "通过发布流程提交一个有效 Dream。" }
+  },
+  {
+    reason: "progress",
+    points: 30,
+    title: { en: "Progress update", zh: "进展更新" },
+    body: { en: "Reserved for the next build-note update flow.", zh: "预留给下一版进展更新流程。" }
+  },
+  {
+    reason: "signalSent",
+    points: 5,
+    title: { en: "Signal a Dream", zh: "支持 Dream" },
+    body: { en: "Support another creator's Dream once per wallet.", zh: "用钱包给其他创建者的 Dream 发送一次 signal。" }
+  },
+  {
+    reason: "signalReceived",
+    points: 2,
+    title: { en: "Receive support", zh: "收到支持" },
+    body: { en: "Will be counted from indexed signal events.", zh: "后续通过索引 signal 事件计入。" }
+  },
+  {
+    reason: "featuredCandidate",
+    points: 50,
+    title: { en: "Featured candidate", zh: "精选候选" },
+    body: { en: "Reserved for reviewer and Spotlight workflows.", zh: "预留给审核者和 Spotlight 流程。" }
+  }
+];
 
 const starterDreams: Dream[] = [
   {
@@ -163,9 +234,32 @@ export default function Home() {
   const [placement, setPlacement] = useState<"standard" | "featured">("standard");
   const [status, setStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [pointsLedger, setPointsLedger] = useState<PointsLedger | undefined>();
   const { isConnected, address } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+
+  useEffect(() => {
+    if (!address) {
+      setPointsLedger(undefined);
+      return;
+    }
+
+    const loaded = loadPointsLedger(address);
+    setPointsLedger(
+      addPointsEvent(loaded, {
+        id: `identity:${normalizeAddress(address)}`,
+        reason: "identity",
+        points: 20,
+        label: { en: "Wallet identity created", zh: "钱包身份已创建" },
+        createdAt: new Date().toISOString()
+      })
+    );
+  }, [address]);
+
+  useEffect(() => {
+    if (pointsLedger) savePointsLedger(pointsLedger);
+  }, [pointsLedger]);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +307,8 @@ export default function Home() {
   const selectedFeeUnits = placement === "featured" ? featuredFeeUnits : publishFeeUnits;
   const totalSignals = liveDreams.reduce((sum, dream) => sum + dream.signals, 0);
   const gross = liveDreams.reduce((sum, dream) => sum + dream.paid, 0);
+  const pointsLevel = getPointsLevel(pointsLedger?.total ?? 0);
+  const leaderboard = useMemo(() => buildLeaderboard(liveDreams, pointsLedger, address, lang), [liveDreams, pointsLedger, address, lang]);
 
   const sortedDreams = useMemo(() => {
     const cloned = [...liveDreams];
@@ -286,9 +382,10 @@ export default function Home() {
 
       await publicClient?.waitForTransactionReceipt({ hash: publishHash });
 
+      const nextDreamId = Math.max(0, ...dreams.map((dream) => dream.id)) + 1;
       setDreams((current) => [
         {
-          id: Math.max(0, ...current.map((dream) => dream.id)) + 1,
+          id: nextDreamId,
           title: { en: title, zh: title },
           category,
           summary: { en: summary, zh: summary },
@@ -302,6 +399,14 @@ export default function Home() {
       ]);
       setDataSource("onchain");
       setStatus(tr(lang, "published"));
+      awardPoints({
+        id: `publish:${normalizeAddress(address)}:${nextDreamId}`,
+        reason: "publish",
+        points: 100,
+        label: { en: `Published Dream #${nextDreamId}`, zh: `发布 Dream #${nextDreamId}` },
+        createdAt: new Date().toISOString(),
+        dreamId: nextDreamId
+      });
       event.currentTarget.reset();
       setPlacement("standard");
     } catch (error) {
@@ -317,6 +422,53 @@ export default function Home() {
     }
   }
 
+  function awardPoints(event: PointsEvent, markSignaledDreamId?: number) {
+    setPointsLedger((current) => {
+      const base = current ?? (address ? createPointsLedger(address) : undefined);
+      if (!base) return current;
+      const next = addPointsEvent(base, event);
+      if (typeof markSignaledDreamId !== "number" || next.signaledDreamIds.includes(markSignaledDreamId)) return next;
+      return {
+        ...next,
+        signaledDreamIds: [...next.signaledDreamIds, markSignaledDreamId],
+        updatedAt: new Date().toISOString()
+      };
+    });
+  }
+
+  function signalDream(dream: Dream) {
+    if (!isConnected || !address) {
+      setStatus(tr(lang, "missingWallet"));
+      return;
+    }
+
+    if (dream.author === shortAddress(address)) {
+      setStatus(tr(lang, "pointsSelfSignalBlocked"));
+      return;
+    }
+
+    if (pointsLedger?.signaledDreamIds.includes(dream.id)) {
+      setStatus(tr(lang, "pointsSignalAlready"));
+      return;
+    }
+
+    setDreams((current) =>
+      current.map((item) => item.id === dream.id ? { ...item, signals: item.signals + 1 } : item)
+    );
+    awardPoints(
+      {
+        id: `signal:${normalizeAddress(address)}:${dream.id}`,
+        reason: "signalSent",
+        points: 5,
+        label: { en: `Signaled Dream #${dream.id}`, zh: `支持 Dream #${dream.id}` },
+        createdAt: new Date().toISOString(),
+        dreamId: dream.id
+      },
+      dream.id
+    );
+    setStatus(tr(lang, "pointsSignalAdded"));
+  }
+
   return (
     <main className="site-shell">
       <header className="site-header">
@@ -329,6 +481,7 @@ export default function Home() {
         </a>
         <nav className="nav-links" aria-label="Primary navigation">
           <a href="#how">{tr(lang, "navHow")}</a>
+          <a href="#points">{tr(lang, "navPoints")}</a>
           <a href="#plaza">{tr(lang, "navPlaza")}</a>
           <a href="#publish">{tr(lang, "navPublish")}</a>
           <a href="#rewards">{tr(lang, "navRewards")}</a>
@@ -389,7 +542,7 @@ export default function Home() {
         <Metric icon={<Sparkles size={19} />} label={tr(lang, "totalDreams")} value={liveDreams.length} />
         <Metric icon={<Megaphone size={19} />} label={tr(lang, "featuredFee")} value={`${featuredFeeUsdc} USDC`} />
         <Metric icon={<Heart size={19} />} label={tr(lang, "totalSignals")} value={totalSignals} />
-        <Metric icon={<Wallet size={19} />} label={tr(lang, "publishFee")} value={`${publishFeeUsdc} USDC`} />
+        <Metric icon={<Medal size={19} />} label={tr(lang, "points")} value={pointsLedger?.total ?? 0} />
       </section>
 
       <section id="how" className="section-block">
@@ -401,6 +554,101 @@ export default function Home() {
           <StepCard number="01" title={tr(lang, "howOneTitle")} body={tr(lang, "howOneBody")} />
           <StepCard number="02" title={tr(lang, "howTwoTitle")} body={tr(lang, "howTwoBody")} />
           <StepCard number="03" title={tr(lang, "howThreeTitle")} body={tr(lang, "howThreeBody")} />
+        </div>
+      </section>
+
+      <section id="points" className="section-block points-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">{tr(lang, "pointsEyebrow")}</p>
+            <h2>{tr(lang, "pointsTitle")}</h2>
+          </div>
+          <span className="tag">{tr(lang, "pointsMvpTag")}</span>
+        </div>
+        <div className="points-layout">
+          <div className="points-card points-profile">
+            <div className="points-profile-head">
+              <div>
+                <span>{tr(lang, "pointsProfile")}</span>
+                <strong>{isConnected && address ? shortAddress(address) : tr(lang, "connectWallet")}</strong>
+              </div>
+              <Medal size={30} />
+            </div>
+            <div className="points-total">
+              <strong>{pointsLedger?.total ?? 0}</strong>
+              <span>{tr(lang, "points")}</span>
+            </div>
+            <div className="level-row">
+              <span>
+                {tr(lang, "pointsLevel")}: {pointsLevel.label[lang]}
+              </span>
+              <span>{pointsLevel.nextLabel}</span>
+            </div>
+            <div className="level-meter" aria-hidden="true">
+              <span style={{ width: `${pointsLevel.progress}%` }} />
+            </div>
+            <p>{tr(lang, "pointsProfileText")}</p>
+          </div>
+
+          <div className="points-card">
+            <div className="points-card-head">
+              <span>{tr(lang, "pointsActivity")}</span>
+              <small>{tr(lang, "pointsLocalOnly")}</small>
+            </div>
+            <div className="activity-list">
+              {(pointsLedger?.events.length ? pointsLedger.events : []).map((event) => (
+                <div className="activity-row" key={event.id}>
+                  <span>{event.label[lang]}</span>
+                  <strong>+{event.points}</strong>
+                </div>
+              ))}
+              {!pointsLedger?.events.length ? <p className="empty-state">{tr(lang, "pointsEmpty")}</p> : null}
+            </div>
+          </div>
+
+          <div className="points-card rules-card">
+            <div className="points-card-head">
+              <span>{tr(lang, "pointsRules")}</span>
+              <small>{tr(lang, "pointsRulesTag")}</small>
+            </div>
+            <div className="points-rules">
+              {pointsRules.map((rule) => (
+                <div className="points-rule" key={rule.reason}>
+                  <strong>+{rule.points}</strong>
+                  <div>
+                    <span>{rule.title[lang]}</span>
+                    <p>{rule.body[lang]}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="points-card leaderboard-card">
+            <div className="points-card-head">
+              <span>
+                <Trophy size={16} />
+                {tr(lang, "pointsLeaderboard")}
+              </span>
+              <small>{tr(lang, "pointsLeaderboardTag")}</small>
+            </div>
+            <div className="leader-list">
+              {leaderboard.map((leader, index) => (
+                <div className="leader-row" key={`${leader.label}-${index}`}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <strong>{leader.label}</strong>
+                    <small>{leader.detail}</small>
+                  </div>
+                  <b>{leader.score}</b>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="points-disclaimer">
+          <ShieldCheck size={20} />
+          <p>{tr(lang, "pointsDisclaimer")}</p>
         </div>
       </section>
 
@@ -520,11 +768,7 @@ export default function Home() {
                 <small>{dream.author}</small>
                 <button
                   type="button"
-                  onClick={() =>
-                    setDreams((current) =>
-                      current.map((item) => item.id === dream.id ? { ...item, signals: item.signals + 1 } : item)
-                    )
-                  }
+                  onClick={() => signalDream(dream)}
                 >
                   {tr(lang, "signals")} {dream.signals}
                 </button>
@@ -564,6 +808,7 @@ export default function Home() {
         </div>
         <div className="footer-links">
           <a href="#how">{tr(lang, "navHow")}</a>
+          <a href="#points">{tr(lang, "navPoints")}</a>
           <a href="#publish">{tr(lang, "navPublish")}</a>
           <a href="#faq">{tr(lang, "navFaq")}</a>
         </div>
@@ -653,6 +898,119 @@ function formatDate(value: string, lang: Lang) {
     minute: "2-digit",
     timeZone: "Asia/Shanghai"
   }).format(new Date(value));
+}
+
+function normalizeAddress(value: string) {
+  return value.toLowerCase();
+}
+
+function pointsStorageKey(address: string) {
+  return `${pointsStoragePrefix}:${normalizeAddress(address)}`;
+}
+
+function createPointsLedger(address: string): PointsLedger {
+  return {
+    address: normalizeAddress(address),
+    total: 0,
+    events: [],
+    signaledDreamIds: [],
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function loadPointsLedger(address: string): PointsLedger {
+  if (typeof window === "undefined") return createPointsLedger(address);
+
+  try {
+    const raw = window.localStorage.getItem(pointsStorageKey(address));
+    if (!raw) return createPointsLedger(address);
+    const parsed = JSON.parse(raw) as PointsLedger;
+    return {
+      ...createPointsLedger(address),
+      ...parsed,
+      address: normalizeAddress(address),
+      events: Array.isArray(parsed.events) ? parsed.events : [],
+      signaledDreamIds: Array.isArray(parsed.signaledDreamIds) ? parsed.signaledDreamIds : []
+    };
+  } catch {
+    return createPointsLedger(address);
+  }
+}
+
+function savePointsLedger(ledger: PointsLedger) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(pointsStorageKey(ledger.address), JSON.stringify(ledger));
+}
+
+function addPointsEvent(ledger: PointsLedger, event: PointsEvent): PointsLedger {
+  if (ledger.events.some((item) => item.id === event.id)) return ledger;
+
+  return {
+    ...ledger,
+    total: ledger.total + event.points,
+    events: [event, ...ledger.events].slice(0, 8),
+    updatedAt: event.createdAt
+  };
+}
+
+function getPointsLevel(total: number) {
+  const levels = [
+    { min: 0, label: { en: "Seed", zh: "种子" } },
+    { min: 100, label: { en: "Builder", zh: "建设者" } },
+    { min: 250, label: { en: "Scout", zh: "发现者" } },
+    { min: 500, label: { en: "Reviewer candidate", zh: "审核候选人" } }
+  ];
+
+  const current = [...levels].reverse().find((level) => total >= level.min) ?? levels[0];
+  const next = levels.find((level) => level.min > total);
+  const start = current.min;
+  const end = next?.min ?? Math.max(total, current.min + 1);
+  const progress = next ? Math.min(100, Math.round(((total - start) / (end - start)) * 100)) : 100;
+
+  return {
+    label: current.label,
+    nextLabel: next ? `${total}/${next.min}` : "MAX",
+    progress
+  };
+}
+
+function buildLeaderboard(dreams: Dream[], ledger: PointsLedger | undefined, address: string | undefined, lang: Lang): Leader[] {
+  const creators = new Map<string, { dreams: number; signals: number; score: number }>();
+
+  dreams.forEach((dream) => {
+    const current = creators.get(dream.author) ?? { dreams: 0, signals: 0, score: 0 };
+    creators.set(dream.author, {
+      dreams: current.dreams + 1,
+      signals: current.signals + dream.signals,
+      score: current.score + 100 + dream.signals * 2 + (dream.featured ? 50 : 0)
+    });
+  });
+
+  const leaders: Leader[] = Array.from(creators.entries()).map(([label, value]) => ({
+    label,
+    score: value.score,
+    detail:
+      lang === "zh"
+        ? `${value.dreams} 个 Dream · ${value.signals} 个 signal`
+        : `${value.dreams} Dreams · ${value.signals} signals`
+  }));
+
+  if (ledger && address) {
+    const label = shortAddress(address);
+    const existing = leaders.find((leader) => leader.label === label);
+    if (existing) {
+      existing.score += ledger.total;
+      existing.detail = lang === "zh" ? "你的 Dream + Somnia Points" : "Your Dreams + Somnia Points";
+    } else {
+      leaders.push({
+        label,
+        score: ledger.total,
+        detail: lang === "zh" ? "你的 Somnia Points" : "Your Somnia Points"
+      });
+    }
+  }
+
+  return leaders.sort((a, b) => b.score - a.score).slice(0, 5);
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
