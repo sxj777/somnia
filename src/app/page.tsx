@@ -31,6 +31,22 @@ import {
   usdcAddress
 } from "@/lib/config";
 import { Lang, tr } from "@/lib/i18n";
+import {
+  addPointsEvent,
+  applyCheckIn,
+  awardIdentityPoints,
+  buildLeaderboard,
+  createPointsLedger,
+  getLocalDateKey,
+  getPointsLevel,
+  loadPointsLedger,
+  normalizeAddress,
+  pointsRules,
+  savePointsLedger,
+  shortAddress,
+  type PointsEvent,
+  type PointsLedger
+} from "@/lib/points";
 import { erc20Abi, somniaDreamRegistryAbi } from "@/lib/somniaAbi";
 
 type Dream = {
@@ -43,33 +59,6 @@ type Dream = {
   paid: number;
   featured: boolean;
   expiresAt: string;
-};
-
-type PointsReason = "identity" | "checkIn" | "publish" | "progress" | "signalSent" | "signalReceived" | "featuredCandidate";
-
-type PointsEvent = {
-  id: string;
-  reason: PointsReason;
-  points: number;
-  label: Record<Lang, string>;
-  createdAt: string;
-  dreamId?: number;
-};
-
-type PointsLedger = {
-  address: string;
-  total: number;
-  events: PointsEvent[];
-  signaledDreamIds: number[];
-  lastCheckInDate?: string;
-  checkInStreak: number;
-  updatedAt: string;
-};
-
-type Leader = {
-  label: string;
-  score: number;
-  detail: string;
 };
 
 type DreamMetadata = {
@@ -99,57 +88,6 @@ type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 
 const days = 24 * 60 * 60 * 1000;
 const demoStartTime = Date.UTC(2026, 6, 4, 8, 0, 0);
-const pointsStoragePrefix = "somnia.points.v1";
-
-const pointsRules: Array<{
-  reason: PointsReason;
-  points: number;
-  title: Record<Lang, string>;
-  body: Record<Lang, string>;
-}> = [
-  {
-    reason: "identity",
-    points: 20,
-    title: { en: "Create identity", zh: "创建身份" },
-    body: { en: "Connect a wallet and start a local Somnia profile.", zh: "连接钱包并生成 Somnia 本地身份。" }
-  },
-  {
-    reason: "checkIn",
-    points: 10,
-    title: { en: "Daily check-in", zh: "每日签到" },
-    body: { en: "Check in once per day to keep participation active.", zh: "每天签到一次，保持参与活跃度。" }
-  },
-  {
-    reason: "publish",
-    points: 100,
-    title: { en: "Publish a Dream", zh: "发布 Dream" },
-    body: { en: "Submit a valid Dream through the publishing flow.", zh: "通过发布流程提交一个有效 Dream。" }
-  },
-  {
-    reason: "progress",
-    points: 30,
-    title: { en: "Progress update", zh: "进展更新" },
-    body: { en: "Reserved for the next build-note update flow.", zh: "预留给下一版进展更新流程。" }
-  },
-  {
-    reason: "signalSent",
-    points: 5,
-    title: { en: "Signal a Dream", zh: "支持 Dream" },
-    body: { en: "Support another creator's Dream once per wallet.", zh: "用钱包给其他创建者的 Dream 发送一次 signal。" }
-  },
-  {
-    reason: "signalReceived",
-    points: 2,
-    title: { en: "Receive support", zh: "收到支持" },
-    body: { en: "Will be counted from indexed signal events.", zh: "后续通过索引 signal 事件计入。" }
-  },
-  {
-    reason: "featuredCandidate",
-    points: 50,
-    title: { en: "Featured candidate", zh: "精选候选" },
-    body: { en: "Reserved for reviewer and Spotlight workflows.", zh: "预留给审核者和 Spotlight 流程。" }
-  }
-];
 
 const starterDreams: Dream[] = [
   {
@@ -254,15 +192,7 @@ export default function Home() {
     }
 
     const loaded = loadPointsLedger(address);
-    setPointsLedger(
-      addPointsEvent(loaded, {
-        id: `identity:${normalizeAddress(address)}`,
-        reason: "identity",
-        points: 20,
-        label: { en: "Wallet identity created", zh: "钱包身份已创建" },
-        createdAt: new Date().toISOString()
-      })
-    );
+    setPointsLedger(awardIdentityPoints(loaded, address));
   }, [address]);
 
   useEffect(() => {
@@ -452,30 +382,14 @@ export default function Home() {
       return;
     }
 
-    const checkInDate = getLocalDateKey();
-    if (pointsLedger?.lastCheckInDate === checkInDate) {
+    if (pointsLedger?.lastCheckInDate === getLocalDateKey()) {
       setStatus(tr(lang, "pointsCheckInAlready"));
       return;
     }
 
     setPointsLedger((current) => {
       const base = current ?? createPointsLedger(address);
-      const yesterdayKey = getLocalDateKey(-1);
-      const nextStreak = base.lastCheckInDate === yesterdayKey ? base.checkInStreak + 1 : 1;
-      const next = addPointsEvent(base, {
-        id: `checkIn:${normalizeAddress(address)}:${checkInDate}`,
-        reason: "checkIn",
-        points: 10,
-        label: { en: `Daily check-in · Day ${nextStreak}`, zh: `每日签到 · 第 ${nextStreak} 天` },
-        createdAt: new Date().toISOString()
-      });
-
-      return {
-        ...next,
-        lastCheckInDate: checkInDate,
-        checkInStreak: nextStreak,
-        updatedAt: new Date().toISOString()
-      };
+      return applyCheckIn(base, address).ledger;
     });
     setStatus(tr(lang, "pointsCheckInAdded"));
   }
@@ -525,7 +439,7 @@ export default function Home() {
         </a>
         <nav className="nav-links" aria-label="Primary navigation">
           <a href="#how">{tr(lang, "navHow")}</a>
-          <a href="#points">{tr(lang, "navPoints")}</a>
+          <a href="/points">{tr(lang, "navPoints")}</a>
           <a href="#plaza">{tr(lang, "navPlaza")}</a>
           <a href="#publish">{tr(lang, "navPublish")}</a>
           <a href="#rewards">{tr(lang, "navRewards")}</a>
@@ -607,7 +521,10 @@ export default function Home() {
             <p className="eyebrow">{tr(lang, "pointsEyebrow")}</p>
             <h2>{tr(lang, "pointsTitle")}</h2>
           </div>
-          <span className="tag">{tr(lang, "pointsMvpTag")}</span>
+          <div className="section-actions">
+            <span className="tag">{tr(lang, "pointsMvpTag")}</span>
+            <a className="secondary-link compact-link" href="/points">{tr(lang, "pointsAccountCta")}</a>
+          </div>
         </div>
         <div className="points-layout">
           <div className="points-card points-profile">
@@ -649,7 +566,7 @@ export default function Home() {
               <small>{tr(lang, "pointsLocalOnly")}</small>
             </div>
             <div className="activity-list">
-              {(pointsLedger?.events.length ? pointsLedger.events : []).map((event) => (
+              {(pointsLedger?.events.length ? pointsLedger.events.slice(0, 8) : []).map((event) => (
                 <div className="activity-row" key={event.id}>
                   <span>{event.label[lang]}</span>
                   <strong>+{event.points}</strong>
@@ -931,12 +848,6 @@ function ipfsToGatewayUrl(uri: string) {
   return `https://gateway.pinata.cloud/ipfs/${uri.replace("ipfs://", "")}`;
 }
 
-function shortAddress(value: string) {
-  return value.startsWith("0x") && value.length >= 10
-    ? `${value.slice(0, 6)}...${value.slice(-4)}`
-    : value;
-}
-
 function splitAmount(total: number, percent: number) {
   return (total * (percent / 100)).toLocaleString(undefined, {
     maximumFractionDigits: 2
@@ -951,112 +862,6 @@ function formatDate(value: string, lang: Lang) {
     minute: "2-digit",
     timeZone: "Asia/Shanghai"
   }).format(new Date(value));
-}
-
-function normalizeAddress(value: string) {
-  return value.toLowerCase();
-}
-
-function pointsStorageKey(address: string) {
-  return `${pointsStoragePrefix}:${normalizeAddress(address)}`;
-}
-
-function createPointsLedger(address: string): PointsLedger {
-  return {
-    address: normalizeAddress(address),
-    total: 0,
-    events: [],
-    signaledDreamIds: [],
-    checkInStreak: 0,
-    updatedAt: new Date().toISOString()
-  };
-}
-
-function loadPointsLedger(address: string): PointsLedger {
-  if (typeof window === "undefined") return createPointsLedger(address);
-
-  try {
-    const raw = window.localStorage.getItem(pointsStorageKey(address));
-    if (!raw) return createPointsLedger(address);
-    const parsed = JSON.parse(raw) as PointsLedger;
-    return {
-      ...createPointsLedger(address),
-      ...parsed,
-      address: normalizeAddress(address),
-      events: Array.isArray(parsed.events) ? parsed.events : [],
-      signaledDreamIds: Array.isArray(parsed.signaledDreamIds) ? parsed.signaledDreamIds : [],
-      checkInStreak: Number.isFinite(parsed.checkInStreak) ? parsed.checkInStreak : 0,
-      lastCheckInDate: typeof parsed.lastCheckInDate === "string" ? parsed.lastCheckInDate : undefined
-    };
-  } catch {
-    return createPointsLedger(address);
-  }
-}
-
-function savePointsLedger(ledger: PointsLedger) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(pointsStorageKey(ledger.address), JSON.stringify(ledger));
-}
-
-function addPointsEvent(ledger: PointsLedger, event: PointsEvent): PointsLedger {
-  if (ledger.events.some((item) => item.id === event.id)) return ledger;
-
-  return {
-    ...ledger,
-    total: ledger.total + event.points,
-    events: [event, ...ledger.events].slice(0, 8),
-    updatedAt: event.createdAt
-  };
-}
-
-function getLocalDateKey(dayOffset = 0) {
-  const date = new Date();
-  date.setDate(date.getDate() + dayOffset);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getPointsLevel(total: number) {
-  const levels = [
-    { min: 0, label: { en: "Seed", zh: "种子" } },
-    { min: 100, label: { en: "Builder", zh: "建设者" } },
-    { min: 250, label: { en: "Scout", zh: "发现者" } },
-    { min: 500, label: { en: "Reviewer candidate", zh: "审核候选人" } }
-  ];
-
-  const current = [...levels].reverse().find((level) => total >= level.min) ?? levels[0];
-  const next = levels.find((level) => level.min > total);
-  const start = current.min;
-  const end = next?.min ?? Math.max(total, current.min + 1);
-  const progress = next ? Math.min(100, Math.round(((total - start) / (end - start)) * 100)) : 100;
-
-  return {
-    label: current.label,
-    nextLabel: next ? `${total}/${next.min}` : "MAX",
-    progress
-  };
-}
-
-function buildLeaderboard(ledger: PointsLedger | undefined, address: string | undefined, lang: Lang): Leader[] {
-  if (ledger && address) {
-    return [
-      {
-        label: shortAddress(address),
-        score: ledger.total,
-        detail: lang === "zh" ? "你的 Somnia Points" : "Your Somnia Points"
-      }
-    ];
-  }
-
-  return [
-    {
-      label: lang === "zh" ? "连接钱包" : "Connect wallet",
-      score: 0,
-      detail: lang === "zh" ? "创建你的积分档案" : "Create your points profile"
-    }
-  ];
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {

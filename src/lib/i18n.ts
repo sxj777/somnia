@@ -94,6 +94,7 @@ export const copy: Record<Lang, Copy> = {
     pointsEyebrow: "Somnia Points",
     pointsTitle: "A reputation layer before fundraising",
     pointsMvpTag: "MVP",
+    pointsAccountCta: "Open account",
     pointsProfile: "Profile",
     pointsLevel: "Level",
     pointsProfileText:
@@ -213,6 +214,7 @@ export const copy: Record<Lang, Copy> = {
     pointsEyebrow: "Somnia Points",
     pointsTitle: "融资前先建立可验证的参与声誉",
     pointsMvpTag: "MVP",
+    pointsAccountCta: "打开积分账户",
     pointsProfile: "个人积分卡",
     pointsLevel: "等级",
     pointsProfileText:
