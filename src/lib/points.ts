@@ -1,91 +1,85 @@
-import type { Lang } from "@/lib/i18n";
-
-export type PointsReason =
-  | "identity"
-  | "checkIn"
-  | "publish"
-  | "progress"
-  | "signalSent"
-  | "signalReceived"
-  | "featuredCandidate";
-
-export type PointsEvent = {
+export type Profile = {
   id: string;
-  reason: PointsReason;
+  wallet_address: string;
+  email: string | null;
+  email_verified: boolean;
+  avatar_url: string | null;
+  nickname: string | null;
+  gender: "male" | "female" | "other" | null;
+  bio: string | null;
+  invite_code: string;
+  invited_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PointsLedgerEntry = {
+  id: string;
+  wallet_address: string;
   points: number;
-  label: Record<Lang, string>;
-  createdAt: string;
-  dreamId?: number;
+  reason: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 };
 
-export type PointsLedger = {
-  address: string;
-  total: number;
-  events: PointsEvent[];
-  signaledDreamIds: number[];
-  lastCheckInDate?: string;
-  checkInStreak: number;
-  updatedAt: string;
+export type Checkin = {
+  id: string;
+  wallet_address: string;
+  checkin_date: string;
+  streak_day: number;
+  created_at: string;
 };
 
-export type Leader = {
-  label: string;
-  score: number;
-  detail: string;
-};
-
-export const pointsRules: Array<{
-  reason: PointsReason;
-  points: number;
-  title: Record<Lang, string>;
-  body: Record<Lang, string>;
-}> = [
+export const pointRules = [
   {
-    reason: "identity",
-    points: 20,
-    title: { en: "Create identity", zh: "创建身份" },
-    body: { en: "Connect a wallet and start a local Somnia profile.", zh: "连接钱包并生成 Somnia 本地身份。" }
-  },
-  {
-    reason: "checkIn",
+    key: "connect_wallet",
     points: 10,
-    title: { en: "Daily check-in", zh: "每日签到" },
-    body: { en: "Check in once per day to keep participation active.", zh: "每天签到一次，保持参与活跃度。" }
+    title: "连接钱包",
+    detail: "每个钱包只奖励一次"
   },
   {
-    reason: "publish",
-    points: 100,
-    title: { en: "Publish a Dream", zh: "发布 Dream" },
-    body: { en: "Submit a valid Dream through the publishing flow.", zh: "通过发布流程提交一个有效 Dream。" }
+    key: "email_verified",
+    points: 20,
+    title: "绑定邮箱",
+    detail: "邮箱验证完成后发放"
   },
   {
-    reason: "progress",
+    key: "profile_created",
     points: 30,
-    title: { en: "Progress update", zh: "进展更新" },
-    body: { en: "Reserved for the next build-note update flow.", zh: "预留给下一版进展更新流程。" }
+    title: "创建账户资料",
+    detail: "头像、昵称、性别为必填"
   },
   {
-    reason: "signalSent",
-    points: 5,
-    title: { en: "Signal a Dream", zh: "支持 Dream" },
-    body: { en: "Support another creator's Dream once per wallet.", zh: "用钱包给其他创建者的 Dream 发送一次 signal。" }
+    key: "daily_checkin",
+    points: 10,
+    title: "每日签到",
+    detail: "完成账户后每天一次"
   },
   {
-    reason: "signalReceived",
-    points: 2,
-    title: { en: "Receive support", zh: "收到支持" },
-    body: { en: "Will be counted from indexed signal events.", zh: "后续通过索引 signal 事件计入。" }
-  },
-  {
-    reason: "featuredCandidate",
+    key: "referral",
     points: 50,
-    title: { en: "Featured candidate", zh: "精选候选" },
-    body: { en: "Reserved for reviewer and Spotlight workflows.", zh: "预留给审核者和 Spotlight 流程。" }
+    title: "成功邀请好友",
+    detail: "好友完成邮箱和资料后发放"
   }
 ];
 
-const pointsStoragePrefix = "somnia.points.v1";
-const maxStoredEvents = 30;
+export const streakRewards = [
+  { days: 7, points: 50 },
+  { days: 30, points: 300 },
+  { days: 365, points: 5000 }
+];
+
+export const avatarOptions = [
+  { value: "avatar-night", label: "Night" },
+  { value: "avatar-signal", label: "Signal" },
+  { value: "avatar-sun", label: "Sun" },
+  { value: "avatar-field", label: "Field" }
+];
+
+export function normalizeAddress(value: string) {
+  return value.trim().toLowerCase();
+}
 
 export function shortAddress(value: string) {
   return value.startsWith("0x") && value.length >= 10
@@ -93,129 +87,7 @@ export function shortAddress(value: string) {
     : value;
 }
 
-export function normalizeAddress(value: string) {
-  return value.toLowerCase();
-}
-
-export function pointsStorageKey(address: string) {
-  return `${pointsStoragePrefix}:${normalizeAddress(address)}`;
-}
-
-export function createPointsLedger(address: string): PointsLedger {
-  return {
-    address: normalizeAddress(address),
-    total: 0,
-    events: [],
-    signaledDreamIds: [],
-    checkInStreak: 0,
-    updatedAt: new Date().toISOString()
-  };
-}
-
-export function loadPointsLedger(address: string): PointsLedger {
-  if (typeof window === "undefined") return createPointsLedger(address);
-
-  try {
-    const raw = window.localStorage.getItem(pointsStorageKey(address));
-    if (!raw) return createPointsLedger(address);
-    const parsed = JSON.parse(raw) as PointsLedger;
-    return {
-      ...createPointsLedger(address),
-      ...parsed,
-      address: normalizeAddress(address),
-      events: Array.isArray(parsed.events) ? parsed.events : [],
-      signaledDreamIds: Array.isArray(parsed.signaledDreamIds) ? parsed.signaledDreamIds : [],
-      checkInStreak: Number.isFinite(parsed.checkInStreak) ? parsed.checkInStreak : 0,
-      lastCheckInDate: typeof parsed.lastCheckInDate === "string" ? parsed.lastCheckInDate : undefined
-    };
-  } catch {
-    return createPointsLedger(address);
-  }
-}
-
-export function savePointsLedger(ledger: PointsLedger) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(pointsStorageKey(ledger.address), JSON.stringify(ledger));
-}
-
-export function addPointsEvent(ledger: PointsLedger, event: PointsEvent): PointsLedger {
-  if (ledger.events.some((item) => item.id === event.id)) return ledger;
-
-  return {
-    ...ledger,
-    total: ledger.total + event.points,
-    events: [event, ...ledger.events].slice(0, maxStoredEvents),
-    updatedAt: event.createdAt
-  };
-}
-
-export function awardIdentityPoints(ledger: PointsLedger, address: string): PointsLedger {
-  return addPointsEvent(ledger, {
-    id: `identity:${normalizeAddress(address)}`,
-    reason: "identity",
-    points: 20,
-    label: { en: "Wallet identity created", zh: "钱包身份已创建" },
-    createdAt: new Date().toISOString()
-  });
-}
-
-export function awardPublishedDreamPoints(ledger: PointsLedger, address: string, dreamIds: number[]): PointsLedger {
-  const uniqueDreamIds = Array.from(new Set(dreamIds)).filter((dreamId) => Number.isFinite(dreamId));
-  const existingPublishEvents = ledger.events.filter((event) => event.reason === "publish");
-
-  if (existingPublishEvents.length >= uniqueDreamIds.length) return ledger;
-
-  const existingDreamIds = new Set(
-    existingPublishEvents
-      .map((event) => event.dreamId)
-      .filter((dreamId): dreamId is number => typeof dreamId === "number")
-  );
-  const missingDreamIds = uniqueDreamIds.filter((dreamId) => !existingDreamIds.has(dreamId));
-  const maxToAdd = uniqueDreamIds.length - existingPublishEvents.length;
-
-  return missingDreamIds.slice(0, maxToAdd).reduce(
-    (nextLedger, dreamId) =>
-      addPointsEvent(nextLedger, {
-        id: `publish:${normalizeAddress(address)}:${dreamId}`,
-        reason: "publish",
-        points: 100,
-        label: { en: `Published Dream #${dreamId}`, zh: `发布 Dream #${dreamId}` },
-        createdAt: new Date().toISOString(),
-        dreamId
-      }),
-    ledger
-  );
-}
-
-export function applyCheckIn(ledger: PointsLedger, address: string) {
-  const checkInDate = getLocalDateKey();
-  if (ledger.lastCheckInDate === checkInDate) {
-    return { ledger, alreadyCheckedIn: true, streak: ledger.checkInStreak };
-  }
-
-  const yesterdayKey = getLocalDateKey(-1);
-  const nextStreak = ledger.lastCheckInDate === yesterdayKey ? ledger.checkInStreak + 1 : 1;
-  const next = addPointsEvent(ledger, {
-    id: `checkIn:${normalizeAddress(address)}:${checkInDate}`,
-    reason: "checkIn",
-    points: 10,
-    label: { en: `Daily check-in · Day ${nextStreak}`, zh: `每日签到 · 第 ${nextStreak} 天` },
-    createdAt: new Date().toISOString()
-  });
-
-  return {
-    ledger: {
-      ...next,
-      lastCheckInDate: checkInDate,
-      checkInStreak: nextStreak,
-      updatedAt: new Date().toISOString()
-    },
-    alreadyCheckedIn: false,
-    streak: nextStreak
-  };
-}
-
-export function getLocalDateKey(dayOffset = 0) {
+export function todayKey(dayOffset = 0) {
   const date = new Date();
   date.setDate(date.getDate() + dayOffset);
   const year = date.getFullYear();
@@ -224,43 +96,40 @@ export function getLocalDateKey(dayOffset = 0) {
   return `${year}-${month}-${day}`;
 }
 
-export function getPointsLevel(total: number) {
-  const levels = [
-    { min: 0, label: { en: "Seed", zh: "种子" } },
-    { min: 100, label: { en: "Builder", zh: "建设者" } },
-    { min: 250, label: { en: "Scout", zh: "发现者" } },
-    { min: 500, label: { en: "Reviewer candidate", zh: "审核候选人" } }
-  ];
-
-  const current = [...levels].reverse().find((level) => total >= level.min) ?? levels[0];
-  const next = levels.find((level) => level.min > total);
-  const start = current.min;
-  const end = next?.min ?? Math.max(total, current.min + 1);
-  const progress = next ? Math.min(100, Math.round(((total - start) / (end - start)) * 100)) : 100;
-
-  return {
-    label: current.label,
-    nextLabel: next ? `${total}/${next.min}` : "MAX",
-    progress
-  };
+export function isProfileComplete(profile: Profile | null | undefined) {
+  return Boolean(profile?.avatar_url && profile.nickname?.trim() && profile.gender);
 }
 
-export function buildLeaderboard(ledger: PointsLedger | undefined, address: string | undefined, lang: Lang): Leader[] {
-  if (ledger && address) {
-    return [
-      {
-        label: shortAddress(address),
-        score: ledger.total,
-        detail: lang === "zh" ? "你的 Somnia Points" : "Your Somnia Points"
-      }
-    ];
-  }
+export function generateInviteCode(wallet: string) {
+  const tail = normalizeAddress(wallet).replace(/^0x/, "").slice(-6).toUpperCase();
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 4).toUpperCase()
+      : Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `SOM${tail}${randomPart}`;
+}
 
-  return [
-    {
-      label: lang === "zh" ? "连接钱包" : "Connect wallet",
-      score: 0,
-      detail: lang === "zh" ? "创建你的积分档案" : "Create your points profile"
-    }
-  ];
+export function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Shanghai"
+  }).format(new Date(value));
+}
+
+export function describeReason(reason: string, description: string | null) {
+  const labels: Record<string, string> = {
+    connect_wallet: "连接钱包",
+    email_verified: "绑定邮箱",
+    profile_created: "创建账户资料",
+    daily_checkin: "每日签到",
+    streak_7: "连续签到 7 天",
+    streak_30: "连续签到 30 天",
+    streak_365: "连续签到 365 天",
+    referral: "成功邀请好友"
+  };
+
+  return description || labels[reason] || reason;
 }

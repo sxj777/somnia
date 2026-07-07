@@ -6,24 +6,21 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.joinsomnia.app"),
   title: {
-    default: "Somnia | Dreams with accountable deadlines",
+    default: "Somnia Points | Account system",
     template: "%s | Somnia"
   },
-  description:
-    "Somnia is a Web3 publishing layer for meaningful goals, transparent placements, and community signals.",
+  description: "Somnia Points is an account and participation record system for the Somnia community.",
   openGraph: {
-    title: "Somnia | Dreams with accountable deadlines",
-    description:
-      "Publish a dream, stake a deadline, and let progress earn the spotlight.",
+    title: "Somnia Points | Account system",
+    description: "Create a wallet account, verify email, complete profile, check in, and track Somnia Points.",
     url: "https://www.joinsomnia.app",
     siteName: "Somnia",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Somnia | Dreams with accountable deadlines",
-    description:
-      "Publish a dream, stake a deadline, and let progress earn the spotlight."
+    title: "Somnia Points | Account system",
+    description: "Somnia Points account, check-in, referral, and ledger system."
   }
 };
 
