@@ -89,6 +89,11 @@ type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 const days = 24 * 60 * 60 * 1000;
 const demoStartTime = Date.UTC(2026, 6, 4, 8, 0, 0);
 const shouldLoadOnchainDreams = Boolean(somniaContractAddress);
+const dreamCacheKey = "somnia.dreams.v1";
+const dreamCacheTtlMs = 60_000;
+const eventScanBlockWindow = 150_000n;
+const eventScanChunkSize = 1_900n;
+const eventScanConcurrency = 6;
 
 const starterDreams: Dream[] = [
   {
@@ -206,10 +211,20 @@ export default function Home() {
     async function loadOnchainDreams() {
       if (!publicClient || !somniaContractAddress) return;
 
+      const cachedDreams = loadCachedDreams();
+      if (cachedDreams.length > 0) {
+        setDreams(cachedDreams);
+        setDataSource("onchain");
+        if (isDreamCacheFresh()) {
+          setIsLoadingDreams(false);
+          return;
+        }
+      }
+
       setIsLoadingDreams(true);
       try {
         const latestBlock = await publicClient.getBlockNumber();
-        const fallbackStart = latestBlock > 1900n ? latestBlock - 1900n : 0n;
+        const fallbackStart = getRecentEventStartBlock(0n, latestBlock);
         const events = await getPublishedDreamEvents(
           publicClient,
           somniaDeployBlock ?? fallbackStart,
@@ -221,7 +236,9 @@ export default function Home() {
         ).filter((dream): dream is Dream => Boolean(dream));
 
         if (!cancelled) {
-          setDreams(loadedDreams.sort((a, b) => b.id - a.id));
+          const sortedLoadedDreams = loadedDreams.sort((a, b) => b.id - a.id);
+          setDreams(sortedLoadedDreams);
+          saveCachedDreams(sortedLoadedDreams);
           setDataSource("onchain");
         }
       } catch (error) {
@@ -823,21 +840,69 @@ async function getPublishedDreamEvents(
   if (fromBlock > toBlock) return [];
 
   const events: DreamPublishedLog[] = [];
-  const maxRange = 1900n;
+  const startBlock = getRecentEventStartBlock(fromBlock, toBlock);
+  const ranges: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
 
-  for (let start = fromBlock; start <= toBlock; start += maxRange + 1n) {
-    const end = start + maxRange > toBlock ? toBlock : start + maxRange;
-    const chunk = await publicClient.getContractEvents({
-      address: somniaContractAddress,
-      abi: somniaDreamRegistryAbi,
-      eventName: "DreamPublished",
+  for (let start = startBlock; start <= toBlock; start += eventScanChunkSize + 1n) {
+    ranges.push({
       fromBlock: start,
-      toBlock: end
+      toBlock: start + eventScanChunkSize > toBlock ? toBlock : start + eventScanChunkSize
     });
-    events.push(...(chunk as DreamPublishedLog[]));
+  }
+
+  for (let index = 0; index < ranges.length; index += eventScanConcurrency) {
+    const batch = ranges.slice(index, index + eventScanConcurrency);
+    const chunks = await Promise.all(
+      batch.map((range) =>
+        publicClient.getContractEvents({
+          address: somniaContractAddress,
+          abi: somniaDreamRegistryAbi,
+          eventName: "DreamPublished",
+          fromBlock: range.fromBlock,
+          toBlock: range.toBlock
+        })
+      )
+    );
+    chunks.forEach((chunk) => events.push(...(chunk as DreamPublishedLog[])));
   }
 
   return events;
+}
+
+function getRecentEventStartBlock(fromBlock: bigint, toBlock: bigint) {
+  const recentStart = toBlock > eventScanBlockWindow ? toBlock - eventScanBlockWindow : 0n;
+  return fromBlock > recentStart ? fromBlock : recentStart;
+}
+
+function loadCachedDreams() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(dreamCacheKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { dreams?: Dream[] };
+    return Array.isArray(parsed.dreams) ? parsed.dreams : [];
+  } catch {
+    return [];
+  }
+}
+
+function isDreamCacheFresh() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const raw = window.localStorage.getItem(dreamCacheKey);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { updatedAt?: string };
+    return typeof parsed.updatedAt === "string" && Date.now() - Date.parse(parsed.updatedAt) < dreamCacheTtlMs;
+  } catch {
+    return false;
+  }
+}
+
+function saveCachedDreams(dreams: Dream[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(dreamCacheKey, JSON.stringify({ dreams, updatedAt: new Date().toISOString() }));
 }
 
 async function fetchDreamMetadata(uri: string): Promise<DreamMetadata | undefined> {

@@ -33,6 +33,10 @@ type DreamPublishedLog = {
 
 type SomniaPublicClient = NonNullable<ReturnType<typeof usePublicClient>>;
 
+const eventScanBlockWindow = 150_000n;
+const eventScanChunkSize = 1_900n;
+const eventScanConcurrency = 6;
+
 const accountCopy = {
   en: {
     back: "Back to site",
@@ -131,7 +135,7 @@ export default function PointsAccountPage() {
     async function syncPublishedDreamPoints() {
       try {
         const latestBlock = await client.getBlockNumber();
-        const events = await getPublishedDreamEvents(client, fromBlock, latestBlock);
+        const events = await getPublishedDreamEvents(client, fromBlock, latestBlock, accountAddress);
         const ownDreamIds = events
           .filter((event) => normalizeAddress(event.args.creator || "") === normalizeAddress(accountAddress))
           .map((event) => event.args.dreamId)
@@ -344,24 +348,43 @@ function formatAccountDate(value: string, lang: Lang) {
 async function getPublishedDreamEvents(
   publicClient: SomniaPublicClient,
   fromBlock: bigint,
-  toBlock: bigint
+  toBlock: bigint,
+  creator: `0x${string}`
 ) {
   if (fromBlock > toBlock || !somniaContractAddress) return [];
 
   const events: DreamPublishedLog[] = [];
-  const maxRange = 1900n;
+  const startBlock = getRecentEventStartBlock(fromBlock, toBlock);
+  const ranges: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
 
-  for (let start = fromBlock; start <= toBlock; start += maxRange + 1n) {
-    const end = start + maxRange > toBlock ? toBlock : start + maxRange;
-    const chunk = await publicClient.getContractEvents({
-      address: somniaContractAddress,
-      abi: somniaDreamRegistryAbi,
-      eventName: "DreamPublished",
+  for (let start = startBlock; start <= toBlock; start += eventScanChunkSize + 1n) {
+    ranges.push({
       fromBlock: start,
-      toBlock: end
+      toBlock: start + eventScanChunkSize > toBlock ? toBlock : start + eventScanChunkSize
     });
-    events.push(...(chunk as DreamPublishedLog[]));
+  }
+
+  for (let index = 0; index < ranges.length; index += eventScanConcurrency) {
+    const batch = ranges.slice(index, index + eventScanConcurrency);
+    const chunks = await Promise.all(
+      batch.map((range) =>
+        publicClient.getContractEvents({
+          address: somniaContractAddress,
+          abi: somniaDreamRegistryAbi,
+          eventName: "DreamPublished",
+          args: { creator },
+          fromBlock: range.fromBlock,
+          toBlock: range.toBlock
+        })
+      )
+    );
+    chunks.forEach((chunk) => events.push(...(chunk as DreamPublishedLog[])));
   }
 
   return events;
+}
+
+function getRecentEventStartBlock(fromBlock: bigint, toBlock: bigint) {
+  const recentStart = toBlock > eventScanBlockWindow ? toBlock - eventScanBlockWindow : 0n;
+  return fromBlock > recentStart ? fromBlock : recentStart;
 }
