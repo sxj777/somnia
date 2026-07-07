@@ -2,6 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
+  BadgeCheck,
   CalendarCheck2,
   CheckCircle2,
   Copy,
@@ -63,7 +64,7 @@ export function PointsApp() {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [draft, setDraft] = useState<ProfileDraft>(emptyDraft);
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("连接钱包后开始创建 Somnia Points 账户。");
+  const [status, setStatus] = useState("连接钱包后创建你的 Somnia Points 账户。");
   const [busy, setBusy] = useState(false);
 
   const totalPoints = useMemo(() => ledger.reduce((sum, item) => sum + item.points, 0), [ledger]);
@@ -71,6 +72,8 @@ export function PointsApp() {
   const checkedInToday = latestCheckin?.checkin_date === todayKey();
   const profileComplete = isProfileComplete(profile);
   const accountReady = Boolean(profile?.email_verified && profileComplete);
+  const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
+  const completionPercent = Math.round((completedSteps / 4) * 100);
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
     return `${window.location.origin}/?ref=${profile.invite_code}`;
@@ -89,7 +92,7 @@ export function PointsApp() {
       setCheckins([]);
       setDraft(emptyDraft);
       setEmail("");
-      setStatus("连接钱包后开始创建 Somnia Points 账户。");
+      setStatus("连接钱包后创建你的 Somnia Points 账户。");
       return;
     }
 
@@ -495,51 +498,63 @@ export function PointsApp() {
     <main className="points-page">
       <header className="topbar">
         <a className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            S
-          </span>
+          <img className="brand-mark" src="/icon.svg" alt="" />
           <span>
             <strong>Somnia Points</strong>
-            <small>Account system</small>
+            <small>Account Center</small>
           </span>
         </a>
+        <div className="topbar-meta" aria-label="产品状态">
+          <span>Beta</span>
+          <span>Supabase</span>
+        </div>
         <ConnectButton label="连接钱包" showBalance={false} />
       </header>
 
-      <section className="points-hero">
-        <div>
-          <p className="eyebrow">Somnia Points MVP</p>
-          <h1>账户和积分系统</h1>
-          <p>首版只保留钱包账户、邮箱绑定、资料创建、每日签到、连续签到奖励、邀请奖励和积分流水。</p>
+      <section className="command-hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Somnia Points</p>
+          <h1>正式积分账户中心</h1>
+          <p>首版专注账户系统和积分系统：连接钱包、绑定邮箱、创建资料、每日签到和邀请好友。</p>
+          <div className="hero-actions">
+            <span className={accountReady ? "state-chip ok" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
+            <span className="state-chip">{wallet ? shortAddress(wallet) : "未连接钱包"}</span>
+          </div>
         </div>
-        <div className="hero-score">
-          <span>总积分</span>
+
+        <aside className="score-console" aria-label="积分总览">
+          <div className="console-head">
+            <span>Current Balance</span>
+            <BadgeCheck size={18} />
+          </div>
           <strong>{totalPoints}</strong>
-          <small>{wallet ? shortAddress(wallet) : "未连接钱包"}</small>
-        </div>
+          <div className="progress-block">
+            <div>
+              <span>账户完成度</span>
+              <b>{completionPercent}%</b>
+            </div>
+            <div className="progress-track" aria-hidden="true">
+              <span style={{ width: `${completionPercent}%` }} />
+            </div>
+          </div>
+        </aside>
       </section>
 
       {!isSupabaseConfigured ? (
         <section className="notice-panel">Supabase 环境变量缺失，请先配置项目 URL 和 anon key。</section>
       ) : null}
 
-      <section className="status-strip">
-        <span className={wallet ? "done" : ""}>钱包</span>
-        <span className={profile?.email_verified ? "done" : ""}>邮箱</span>
-        <span className={profileComplete ? "done" : ""}>资料</span>
-        <span className={accountReady ? "done" : ""}>签到</span>
+      <section className="status-strip" aria-label="账户进度">
+        <StepPill active={Boolean(wallet)} label="连接钱包" value="+10" />
+        <StepPill active={Boolean(profile?.email_verified)} label="绑定邮箱" value="+20" />
+        <StepPill active={profileComplete} label="创建资料" value="+30" />
+        <StepPill active={Boolean(checkedInToday)} label="每日签到" value="+10" />
       </section>
 
       <section className="dashboard-grid">
         <article className="panel summary-panel">
-          <div className="panel-head">
-            <span>
-              <Wallet size={18} />
-              钱包账户
-            </span>
-            {busy ? <small>同步中</small> : <small>{profile ? "已创建" : "等待连接"}</small>}
-          </div>
-          <div className="wallet-line">{wallet ? shortAddress(wallet) : "请连接钱包"}</div>
+          <PanelTitle icon={<Wallet size={18} />} meta={busy ? "同步中" : profile ? "已创建" : "等待连接"} title="账户身份" />
+          <div className={wallet ? "wallet-line" : "wallet-line muted-wallet"}>{wallet ? shortAddress(wallet) : "等待钱包连接"}</div>
           <div className="summary-list">
             <Row label="邮箱" value={profile?.email_verified ? profile.email || "已绑定" : "未绑定"} done={Boolean(profile?.email_verified)} />
             <Row label="资料" value={profileComplete ? "已完成" : "未完成"} done={profileComplete} />
@@ -549,13 +564,7 @@ export function PointsApp() {
         </article>
 
         <article className="panel email-panel">
-          <div className="panel-head">
-            <span>
-              <Mail size={18} />
-              绑定邮箱
-            </span>
-            <b>+20</b>
-          </div>
+          <PanelTitle icon={<Mail size={18} />} meta="+20" title="邮箱验证" />
           <form className="stack-form" onSubmit={sendEmailLink}>
             <input
               disabled={!wallet || busy || Boolean(profile?.email_verified)}
@@ -576,13 +585,7 @@ export function PointsApp() {
         </article>
 
         <article className="panel checkin-panel">
-          <div className="panel-head">
-            <span>
-              <CalendarCheck2 size={18} />
-              每日签到
-            </span>
-            <b>+10</b>
-          </div>
+          <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
           <div className="streak-number">
             <span>连续签到</span>
             <strong>{latestCheckin?.streak_day ?? 0}</strong>
@@ -593,15 +596,9 @@ export function PointsApp() {
         </article>
       </section>
 
-      <section className="two-column">
+      <section className="work-grid">
         <article className="panel profile-panel">
-          <div className="panel-head">
-            <span>
-              <UserRound size={18} />
-              账户资料
-            </span>
-            <b>+30</b>
-          </div>
+          <PanelTitle icon={<UserRound size={18} />} meta="+30" title="账户资料" />
           <form className="profile-form" onSubmit={saveProfile}>
             <div className="avatar-grid" role="radiogroup" aria-label="头像">
               {avatarOptions.map((avatar) => (
@@ -657,47 +654,40 @@ export function PointsApp() {
           </form>
         </article>
 
-        <article className="panel invite-panel">
-          <div className="panel-head">
-            <span>
-              <Users size={18} />
-              邀请好友
-            </span>
-            <b>+50</b>
-          </div>
-          <div className="invite-box">
-            <small>邀请码</small>
-            <strong>{profile?.invite_code || "连接钱包后生成"}</strong>
-          </div>
-          <button className="copy-button" disabled={!inviteLink} onClick={copyInviteLink} type="button">
-            <Copy size={16} />
-            复制邀请链接
-          </button>
-          <div className="strict-list">
-            <span>成功邀请条件</span>
-            <p>好友通过邀请链接进入、连接钱包、绑定邮箱、创建资料后，邀请人获得 50 积分。</p>
-          </div>
-          <div className="streak-rewards">
-            <span>
-              <Trophy size={17} />
-              连续签到奖励
-            </span>
-            {streakRewards.map((reward) => (
-              <div key={reward.days}>
-                <small>{reward.days} 天</small>
-                <strong>+{reward.points}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
+        <aside className="side-stack">
+          <article className="panel invite-panel">
+            <PanelTitle icon={<Users size={18} />} meta="+50" title="邀请好友" />
+            <div className="invite-box">
+              <small>邀请码</small>
+              <strong>{profile?.invite_code || "连接钱包后生成"}</strong>
+            </div>
+            <button className="copy-button" disabled={!inviteLink} onClick={copyInviteLink} type="button">
+              <Copy size={16} />
+              复制邀请链接
+            </button>
+            <p className="fine-print">好友通过邀请链接进入，并完成钱包、邮箱和资料后，邀请人获得 50 积分。</p>
+          </article>
+
+          <article className="panel rewards-panel">
+            <PanelTitle icon={<Trophy size={18} />} title="连续签到奖励" />
+            <div className="streak-rewards">
+              {streakRewards.map((reward) => (
+                <div key={reward.days}>
+                  <small>{reward.days} 天</small>
+                  <strong>+{reward.points}</strong>
+                </div>
+              ))}
+            </div>
+          </article>
+        </aside>
       </section>
 
-      <section className="panel rules-panel">
-        <div className="panel-head">
-          <span>
-            <CheckCircle2 size={18} />
-            积分规则
-          </span>
+      <section className="rules-panel">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Rules</p>
+            <h2>积分获取规则</h2>
+          </div>
         </div>
         <div className="rules-grid">
           {pointRules.map((rule) => (
@@ -711,10 +701,7 @@ export function PointsApp() {
       </section>
 
       <section className="panel ledger-panel">
-        <div className="panel-head">
-          <span>积分流水</span>
-          <small>{ledger.length} 条</small>
-        </div>
+        <PanelTitle meta={`${ledger.length} 条`} title="积分流水" />
         <div className="ledger-list">
           {ledger.map((item) => (
             <div className="ledger-row" key={item.id}>
@@ -734,6 +721,28 @@ export function PointsApp() {
         <p>Somnia Points 是平台内参与记录，不是代币，不可转让，不承诺收益、空投、股权或兑换。</p>
       </section>
     </main>
+  );
+}
+
+function StepPill({ active, label, value }: { active: boolean; label: string; value: string }) {
+  return (
+    <div className={active ? "step-pill done" : "step-pill"}>
+      <CheckCircle2 size={16} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function PanelTitle({ icon, meta, title }: { icon?: React.ReactNode; meta?: string; title: string }) {
+  return (
+    <div className="panel-head">
+      <span>
+        {icon}
+        {title}
+      </span>
+      {meta ? <small>{meta}</small> : null}
+    </div>
   );
 }
 
