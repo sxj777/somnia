@@ -2,13 +2,11 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
-  Activity,
   BadgeCheck,
   CalendarCheck2,
   CheckCircle2,
   Copy,
   Database,
-  Gift,
   Mail,
   ShieldCheck,
   Trophy,
@@ -502,7 +500,7 @@ export function PointsApp() {
 
   return (
     <main className="app-shell">
-      <aside className="side-rail" aria-label="Somnia Points navigation">
+      <header className="brand-header">
         <a className="brand-block" href="/">
           <SomniaMark />
           <span>
@@ -511,59 +509,38 @@ export function PointsApp() {
           </span>
         </a>
 
-        <nav className="side-nav" aria-label="积分系统导航">
-          <a className="active" href="#overview">
-            <Activity size={17} />
-            Overview
-          </a>
+        <nav className="brand-nav" aria-label="积分系统导航">
+          <a href="#overview">Overview</a>
           <a href="#account">
-            <UserRound size={17} />
             Account
           </a>
           <a href="#rewards">
-            <Gift size={17} />
             Rewards
           </a>
           <a href="#ledger">
-            <Database size={17} />
             Ledger
           </a>
         </nav>
 
-        <div className="rail-card">
-          <span>积分规则</span>
-          <strong>5 个基础任务</strong>
-          <p>当前版本只记录账户、邮箱、资料、签到和邀请，不包含 Dream、排行榜、等级。</p>
+        <div className="top-actions">
+          <span className={accountReady ? "state-chip ready" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
+          <ConnectButton label="连接钱包" showBalance={false} />
         </div>
-
-        <div className="rail-metrics" aria-label="账户摘要">
-          <div>
-            <span>账户完成</span>
-            <strong>{completedSteps}/{totalSteps}</strong>
-          </div>
-          <div>
-            <span>当前积分</span>
-            <strong>{totalPoints}</strong>
-          </div>
-          <div>
-            <span>连续签到</span>
-            <strong>{currentStreak} 天</strong>
-          </div>
-        </div>
-      </aside>
+      </header>
 
       <section className="main-stage">
-        <header className="app-topbar">
+        <section className="intro-band">
           <div>
             <p className="eyebrow">Production MVP</p>
-            <h1>Somnia Points Console</h1>
-            <span className="top-subtitle">一个围绕钱包身份、邮箱验证、账户资料、签到和邀请建立的正式积分账户系统。</span>
+            <h1>Somnia Points Account</h1>
+            <span className="top-subtitle">围绕钱包身份、邮箱验证、账户资料、每日签到和邀请建立的积分账户系统。</span>
           </div>
-          <div className="top-actions">
-            <span className={accountReady ? "state-chip ready" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
-            <ConnectButton label="连接钱包" showBalance={false} />
+          <div className="intro-note">
+            <span>当前范围</span>
+            <strong>只做账户与积分</strong>
+            <p>暂不包含 Dream、排行榜、等级和积分消费，先把账户系统做稳。</p>
           </div>
-        </header>
+        </section>
 
         <section className="command-strip" aria-label="系统状态">
           <div>
