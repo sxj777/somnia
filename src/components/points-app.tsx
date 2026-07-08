@@ -73,10 +73,12 @@ export function PointsApp() {
 
   const totalPoints = useMemo(() => ledger.reduce((sum, item) => sum + item.points, 0), [ledger]);
   const latestCheckin = checkins[0];
+  const currentStreak = latestCheckin?.streak_day ?? 0;
   const checkedInToday = latestCheckin?.checkin_date === todayKey();
   const profileComplete = isProfileComplete(profile);
   const accountReady = Boolean(profile?.email_verified && profileComplete);
   const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
+  const totalSteps = 4;
   const completionPercent = Math.round((completedSteps / 4) * 100);
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
@@ -533,13 +535,29 @@ export function PointsApp() {
           <strong>5 个基础任务</strong>
           <p>当前版本只记录账户、邮箱、资料、签到和邀请，不包含 Dream、排行榜、等级。</p>
         </div>
+
+        <div className="rail-metrics" aria-label="账户摘要">
+          <div>
+            <span>账户完成</span>
+            <strong>{completedSteps}/{totalSteps}</strong>
+          </div>
+          <div>
+            <span>当前积分</span>
+            <strong>{totalPoints}</strong>
+          </div>
+          <div>
+            <span>连续签到</span>
+            <strong>{currentStreak} 天</strong>
+          </div>
+        </div>
       </aside>
 
       <section className="main-stage">
         <header className="app-topbar">
           <div>
             <p className="eyebrow">Production MVP</p>
-            <h1>正式积分账户中心</h1>
+            <h1>Somnia Points Console</h1>
+            <span className="top-subtitle">一个围绕钱包身份、邮箱验证、账户资料、签到和邀请建立的正式积分账户系统。</span>
           </div>
           <div className="top-actions">
             <span className={accountReady ? "state-chip ready" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
@@ -547,13 +565,28 @@ export function PointsApp() {
           </div>
         </header>
 
+        <section className="command-strip" aria-label="系统状态">
+          <div>
+            <span>System Scope</span>
+            <strong>Account + Points</strong>
+          </div>
+          <div>
+            <span>Database</span>
+            <strong>{isSupabaseConfigured ? "Supabase Connected" : "Config Needed"}</strong>
+          </div>
+          <div>
+            <span>Reward Mode</span>
+            <strong>One-time + Daily</strong>
+          </div>
+        </section>
+
         <section id="overview" className="overview-grid">
           <article className="balance-panel">
             <div className="balance-top">
               <span>Somnia Points</span>
               <BadgeCheck size={19} />
             </div>
-            <strong>{totalPoints}</strong>
+            <strong className="balance-value">{totalPoints}</strong>
             <div className="progress-block">
               <div>
                 <span>账户完成度</span>
@@ -561,6 +594,20 @@ export function PointsApp() {
               </div>
               <div className="progress-track" aria-hidden="true">
                 <span style={{ width: `${completionPercent}%` }} />
+              </div>
+            </div>
+            <div className="balance-stat-row">
+              <div>
+                <span>已完成任务</span>
+                <strong>{completedSteps}</strong>
+              </div>
+              <div>
+                <span>连续签到</span>
+                <strong>{currentStreak}</strong>
+              </div>
+              <div>
+                <span>流水记录</span>
+                <strong>{ledger.length}</strong>
               </div>
             </div>
           </article>
@@ -675,7 +722,7 @@ export function PointsApp() {
               <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
               <div className="checkin-meter">
                 <span>连续签到</span>
-                <strong>{latestCheckin?.streak_day ?? 0}</strong>
+                <strong>{currentStreak}</strong>
               </div>
               <button className="primary-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
                 {checkedInToday ? "今天已签到" : "签到"}
