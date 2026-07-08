@@ -2,10 +2,13 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
+  Activity,
   BadgeCheck,
   CalendarCheck2,
   CheckCircle2,
   Copy,
+  Database,
+  Gift,
   Mail,
   ShieldCheck,
   Trophy,
@@ -13,6 +16,7 @@ import {
   Users,
   Wallet
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import {
@@ -495,166 +499,192 @@ export function PointsApp() {
   }
 
   return (
-    <main className="points-page">
-      <header className="topbar">
-        <a className="brand" href="/">
-          <img className="brand-mark" src="/icon.svg" alt="" />
+    <main className="app-shell">
+      <aside className="side-rail" aria-label="Somnia Points navigation">
+        <a className="brand-block" href="/">
+          <SomniaMark />
           <span>
             <strong>Somnia Points</strong>
             <small>Account Center</small>
           </span>
         </a>
-        <div className="topbar-meta" aria-label="产品状态">
-          <span>Beta</span>
-          <span>Supabase</span>
+
+        <nav className="side-nav" aria-label="积分系统导航">
+          <a className="active" href="#overview">
+            <Activity size={17} />
+            Overview
+          </a>
+          <a href="#account">
+            <UserRound size={17} />
+            Account
+          </a>
+          <a href="#rewards">
+            <Gift size={17} />
+            Rewards
+          </a>
+          <a href="#ledger">
+            <Database size={17} />
+            Ledger
+          </a>
+        </nav>
+
+        <div className="rail-card">
+          <span>积分规则</span>
+          <strong>5 个基础任务</strong>
+          <p>当前版本只记录账户、邮箱、资料、签到和邀请，不包含 Dream、排行榜、等级。</p>
         </div>
-        <ConnectButton label="连接钱包" showBalance={false} />
-      </header>
+      </aside>
 
-      <section className="command-hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Somnia Points</p>
-          <h1>正式积分账户中心</h1>
-          <p>首版专注账户系统和积分系统：连接钱包、绑定邮箱、创建资料、每日签到和邀请好友。</p>
-          <div className="hero-actions">
-            <span className={accountReady ? "state-chip ok" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
-            <span className="state-chip">{wallet ? shortAddress(wallet) : "未连接钱包"}</span>
+      <section className="main-stage">
+        <header className="app-topbar">
+          <div>
+            <p className="eyebrow">Production MVP</p>
+            <h1>正式积分账户中心</h1>
           </div>
-        </div>
+          <div className="top-actions">
+            <span className={accountReady ? "state-chip ready" : "state-chip"}>{accountReady ? "账户已就绪" : "账户待完善"}</span>
+            <ConnectButton label="连接钱包" showBalance={false} />
+          </div>
+        </header>
 
-        <aside className="score-console" aria-label="积分总览">
-          <div className="console-head">
-            <span>Current Balance</span>
-            <BadgeCheck size={18} />
-          </div>
-          <strong>{totalPoints}</strong>
-          <div className="progress-block">
-            <div>
-              <span>账户完成度</span>
-              <b>{completionPercent}%</b>
+        <section id="overview" className="overview-grid">
+          <article className="balance-panel">
+            <div className="balance-top">
+              <span>Somnia Points</span>
+              <BadgeCheck size={19} />
             </div>
-            <div className="progress-track" aria-hidden="true">
-              <span style={{ width: `${completionPercent}%` }} />
+            <strong>{totalPoints}</strong>
+            <div className="progress-block">
+              <div>
+                <span>账户完成度</span>
+                <b>{completionPercent}%</b>
+              </div>
+              <div className="progress-track" aria-hidden="true">
+                <span style={{ width: `${completionPercent}%` }} />
+              </div>
             </div>
-          </div>
-        </aside>
-      </section>
+          </article>
 
-      {!isSupabaseConfigured ? (
-        <section className="notice-panel">Supabase 环境变量缺失，请先配置项目 URL 和 anon key。</section>
-      ) : null}
-
-      <section className="status-strip" aria-label="账户进度">
-        <StepPill active={Boolean(wallet)} label="连接钱包" value="+10" />
-        <StepPill active={Boolean(profile?.email_verified)} label="绑定邮箱" value="+20" />
-        <StepPill active={profileComplete} label="创建资料" value="+30" />
-        <StepPill active={Boolean(checkedInToday)} label="每日签到" value="+10" />
-      </section>
-
-      <section className="dashboard-grid">
-        <article className="panel summary-panel">
-          <PanelTitle icon={<Wallet size={18} />} meta={busy ? "同步中" : profile ? "已创建" : "等待连接"} title="账户身份" />
-          <div className={wallet ? "wallet-line" : "wallet-line muted-wallet"}>{wallet ? shortAddress(wallet) : "等待钱包连接"}</div>
-          <div className="summary-list">
-            <Row label="邮箱" value={profile?.email_verified ? profile.email || "已绑定" : "未绑定"} done={Boolean(profile?.email_verified)} />
-            <Row label="资料" value={profileComplete ? "已完成" : "未完成"} done={profileComplete} />
-            <Row label="今日签到" value={checkedInToday ? "已签到" : "未签到"} done={Boolean(checkedInToday)} />
-          </div>
-          <p className="status-text">{status}</p>
-        </article>
-
-        <article className="panel email-panel">
-          <PanelTitle icon={<Mail size={18} />} meta="+20" title="邮箱验证" />
-          <form className="stack-form" onSubmit={sendEmailLink}>
-            <input
-              disabled={!wallet || busy || Boolean(profile?.email_verified)}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
-              type="email"
-              value={email}
-            />
-            <div className="button-row">
-              <button disabled={!wallet || busy || Boolean(profile?.email_verified)} type="submit">
-                发送验证邮件
-              </button>
-              <button disabled={!wallet || busy} onClick={claimEmailManually} type="button">
-                检查验证
-              </button>
+          <article className="identity-panel">
+            <PanelTitle icon={<Wallet size={18} />} meta={busy ? "同步中" : profile ? "已创建" : "等待连接"} title="账户身份" />
+            <div className={wallet ? "wallet-value" : "wallet-value pending"}>{wallet ? shortAddress(wallet) : "等待钱包连接"}</div>
+            <p>{status}</p>
+            <div className="identity-checks">
+              <CheckItem done={Boolean(wallet)} label="钱包已连接" />
+              <CheckItem done={Boolean(profile?.email_verified)} label="邮箱已绑定" />
+              <CheckItem done={profileComplete} label="资料已完成" />
+              <CheckItem done={Boolean(checkedInToday)} label="今日已签到" />
             </div>
-          </form>
-        </article>
+          </article>
+        </section>
 
-        <article className="panel checkin-panel">
-          <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
-          <div className="streak-number">
-            <span>连续签到</span>
-            <strong>{latestCheckin?.streak_day ?? 0}</strong>
-          </div>
-          <button className="full-button" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
-            {checkedInToday ? "今天已签到" : "签到"}
-          </button>
-        </article>
-      </section>
+        {!isSupabaseConfigured ? (
+          <section className="notice-panel">Supabase 环境变量缺失，请先配置项目 URL 和 anon key。</section>
+        ) : null}
 
-      <section className="work-grid">
-        <article className="panel profile-panel">
-          <PanelTitle icon={<UserRound size={18} />} meta="+30" title="账户资料" />
-          <form className="profile-form" onSubmit={saveProfile}>
-            <div className="avatar-grid" role="radiogroup" aria-label="头像">
-              {avatarOptions.map((avatar) => (
-                <button
-                  className={draft.avatar_url === avatar.value ? "selected" : ""}
+        <section className="task-strip" aria-label="积分任务">
+          <StepPill active={Boolean(wallet)} label="连接钱包" value="+10" />
+          <StepPill active={Boolean(profile?.email_verified)} label="绑定邮箱" value="+20" />
+          <StepPill active={profileComplete} label="创建资料" value="+30" />
+          <StepPill active={Boolean(checkedInToday)} label="每日签到" value="+10" />
+        </section>
+
+        <section id="account" className="content-grid">
+          <article className="panel profile-panel">
+            <PanelTitle icon={<UserRound size={18} />} meta="+30" title="账户资料" />
+            <form className="profile-form" onSubmit={saveProfile}>
+              <div className="avatar-grid" role="radiogroup" aria-label="头像">
+                {avatarOptions.map((avatar) => (
+                  <button
+                    className={draft.avatar_url === avatar.value ? "selected" : ""}
+                    disabled={!wallet || busy}
+                    key={avatar.value}
+                    onClick={() => setDraft((current) => ({ ...current, avatar_url: avatar.value }))}
+                    type="button"
+                  >
+                    <span className={`avatar-dot ${avatar.value}`} />
+                    {avatar.label}
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                <label>
+                  昵称
+                  <input
+                    disabled={!wallet || busy}
+                    maxLength={24}
+                    onChange={(event) => setDraft((current) => ({ ...current, nickname: event.target.value }))}
+                    required
+                    value={draft.nickname}
+                  />
+                </label>
+                <label>
+                  性别
+                  <select
+                    disabled={!wallet || busy}
+                    onChange={(event) => setDraft((current) => ({ ...current, gender: event.target.value as ProfileDraft["gender"] }))}
+                    required
+                    value={draft.gender}
+                  >
+                    <option value="">请选择</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                    <option value="other">其他</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                简介
+                <textarea
                   disabled={!wallet || busy}
-                  key={avatar.value}
-                  onClick={() => setDraft((current) => ({ ...current, avatar_url: avatar.value }))}
-                  type="button"
-                >
-                  <span className={`avatar-dot ${avatar.value}`} />
-                  {avatar.label}
-                </button>
-              ))}
-            </div>
-            <label>
-              昵称
-              <input
-                disabled={!wallet || busy}
-                maxLength={24}
-                onChange={(event) => setDraft((current) => ({ ...current, nickname: event.target.value }))}
-                required
-                value={draft.nickname}
-              />
-            </label>
-            <label>
-              性别
-              <select
-                disabled={!wallet || busy}
-                onChange={(event) => setDraft((current) => ({ ...current, gender: event.target.value as ProfileDraft["gender"] }))}
-                required
-                value={draft.gender}
-              >
-                <option value="">请选择</option>
-                <option value="male">男</option>
-                <option value="female">女</option>
-                <option value="other">其他</option>
-              </select>
-            </label>
-            <label>
-              简介
-              <textarea
-                disabled={!wallet || busy}
-                maxLength={160}
-                onChange={(event) => setDraft((current) => ({ ...current, bio: event.target.value }))}
-                rows={4}
-                value={draft.bio}
-              />
-            </label>
-            <button className="full-button" disabled={!wallet || busy} type="submit">
-              保存资料
-            </button>
-          </form>
-        </article>
+                  maxLength={160}
+                  onChange={(event) => setDraft((current) => ({ ...current, bio: event.target.value }))}
+                  rows={4}
+                  value={draft.bio}
+                />
+              </label>
+              <button className="primary-action" disabled={!wallet || busy} type="submit">
+                保存资料
+              </button>
+            </form>
+          </article>
 
-        <aside className="side-stack">
+          <aside className="action-stack">
+            <article className="panel">
+              <PanelTitle icon={<Mail size={18} />} meta="+20" title="邮箱验证" />
+              <form className="stack-form" onSubmit={sendEmailLink}>
+                <input
+                  disabled={!wallet || busy || Boolean(profile?.email_verified)}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="name@example.com"
+                  type="email"
+                  value={email}
+                />
+                <div className="button-row">
+                  <button disabled={!wallet || busy || Boolean(profile?.email_verified)} type="submit">
+                    发送验证邮件
+                  </button>
+                  <button disabled={!wallet || busy} onClick={claimEmailManually} type="button">
+                    检查验证
+                  </button>
+                </div>
+              </form>
+            </article>
+
+            <article className="panel compact-panel">
+              <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
+              <div className="checkin-meter">
+                <span>连续签到</span>
+                <strong>{latestCheckin?.streak_day ?? 0}</strong>
+              </div>
+              <button className="primary-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
+                {checkedInToday ? "今天已签到" : "签到"}
+              </button>
+            </article>
+          </aside>
+        </section>
+
+        <section id="rewards" className="reward-grid">
           <article className="panel invite-panel">
             <PanelTitle icon={<Users size={18} />} meta="+50" title="邀请好友" />
             <div className="invite-box">
@@ -668,57 +698,48 @@ export function PointsApp() {
             <p className="fine-print">好友通过邀请链接进入，并完成钱包、邮箱和资料后，邀请人获得 50 积分。</p>
           </article>
 
-          <article className="panel rewards-panel">
-            <PanelTitle icon={<Trophy size={18} />} title="连续签到奖励" />
-            <div className="streak-rewards">
+          <article className="panel rules-panel">
+            <PanelTitle icon={<Trophy size={18} />} title="奖励规则" />
+            <div className="rules-grid">
+              {pointRules.map((rule) => (
+                <div className="rule-card" key={rule.key}>
+                  <strong>+{rule.points}</strong>
+                  <span>{rule.title}</span>
+                  <small>{rule.detail}</small>
+                </div>
+              ))}
+            </div>
+            <div className="streak-row">
               {streakRewards.map((reward) => (
                 <div key={reward.days}>
-                  <small>{reward.days} 天</small>
+                  <small>{reward.days} 天连续签到</small>
                   <strong>+{reward.points}</strong>
                 </div>
               ))}
             </div>
           </article>
-        </aside>
-      </section>
+        </section>
 
-      <section className="rules-panel">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Rules</p>
-            <h2>积分获取规则</h2>
-          </div>
-        </div>
-        <div className="rules-grid">
-          {pointRules.map((rule) => (
-            <div className="rule-card" key={rule.key}>
-              <strong>+{rule.points}</strong>
-              <span>{rule.title}</span>
-              <small>{rule.detail}</small>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel ledger-panel">
-        <PanelTitle meta={`${ledger.length} 条`} title="积分流水" />
-        <div className="ledger-list">
-          {ledger.map((item) => (
-            <div className="ledger-row" key={item.id}>
-              <div>
-                <span>{describeReason(item.reason, item.description)}</span>
-                <small>{formatDateTime(item.created_at)}</small>
+        <section id="ledger" className="panel ledger-panel">
+          <PanelTitle icon={<Database size={18} />} meta={`${ledger.length} 条`} title="积分流水" />
+          <div className="ledger-list">
+            {ledger.map((item) => (
+              <div className="ledger-row" key={item.id}>
+                <div>
+                  <span>{describeReason(item.reason, item.description)}</span>
+                  <small>{formatDateTime(item.created_at)}</small>
+                </div>
+                <strong>+{item.points}</strong>
               </div>
-              <strong>+{item.points}</strong>
-            </div>
-          ))}
-          {!ledger.length ? <p className="empty-state">暂无积分流水。</p> : null}
-        </div>
-      </section>
+            ))}
+            {!ledger.length ? <p className="empty-state">暂无积分流水。</p> : null}
+          </div>
+        </section>
 
-      <section className="risk-note">
-        <ShieldCheck size={20} />
-        <p>Somnia Points 是平台内参与记录，不是代币，不可转让，不承诺收益、空投、股权或兑换。</p>
+        <section className="risk-note">
+          <ShieldCheck size={20} />
+          <p>Somnia Points 是平台内参与记录，不是代币，不可转让，不承诺收益、空投、股权或兑换。</p>
+        </section>
       </section>
     </main>
   );
@@ -734,7 +755,16 @@ function StepPill({ active, label, value }: { active: boolean; label: string; va
   );
 }
 
-function PanelTitle({ icon, meta, title }: { icon?: React.ReactNode; meta?: string; title: string }) {
+function CheckItem({ done, label }: { done: boolean; label: string }) {
+  return (
+    <span className={done ? "check-item done" : "check-item"}>
+      <CheckCircle2 size={15} />
+      {label}
+    </span>
+  );
+}
+
+function PanelTitle({ icon, meta, title }: { icon?: ReactNode; meta?: string; title: string }) {
   return (
     <div className="panel-head">
       <span>
@@ -746,11 +776,30 @@ function PanelTitle({ icon, meta, title }: { icon?: React.ReactNode; meta?: stri
   );
 }
 
-function Row({ label, value, done }: { label: string; value: string; done: boolean }) {
+function SomniaMark() {
   return (
-    <div className="summary-row">
-      <span>{label}</span>
-      <strong className={done ? "ok" : ""}>{value}</strong>
-    </div>
+    <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect width="64" height="64" rx="12" fill="#111316" />
+      <path
+        d="M40.8 17.5C31.1 18.2 23.5 26.2 23.5 36c0 4.8 1.8 9.1 4.8 12.4C19.8 46.6 13.5 39 13.5 30c0-9.9 7.6-18.1 17.3-18.9 4-.3 7.4 1 10 3.4 1.1 1 .7 2.9 0 3Z"
+        fill="#F8F4EA"
+      />
+      <path
+        d="M22 42.5c8.5 7.7 21.5 6.8 28.8-1.9"
+        fill="none"
+        stroke="#0B8F7D"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <path
+        d="m44 29 5.4 5.4L58 24.8"
+        fill="none"
+        stroke="#D5A036"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="4.2"
+      />
+      <circle cx="48" cy="13.5" r="3.5" fill="#BD5B4B" />
+    </svg>
   );
 }
