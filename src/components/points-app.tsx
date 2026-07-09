@@ -15,10 +15,9 @@ import {
   Wallet
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import {
-  avatarOptions,
   describeReason,
   formatDateTime,
   generateInviteCode,
@@ -77,7 +76,6 @@ export function PointsApp() {
   const accountReady = Boolean(profile?.email_verified && profileComplete);
   const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
   const completionPercent = Math.round((completedSteps / 4) * 100);
-  const selectedAvatar = avatarOptions.find((avatar) => avatar.value === draft.avatar_url);
   const profileRequiredDone = [Boolean(draft.avatar_url), Boolean(draft.nickname.trim()), Boolean(draft.gender)].filter(Boolean).length;
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
@@ -240,6 +238,30 @@ export function PointsApp() {
 
     if (ledgerResult.error) throw new Error(ledgerResult.error.message);
     return true;
+  }
+
+  async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setStatus("请选择图片文件作为头像。");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus("头像图片不要超过 5MB。");
+      return;
+    }
+
+    try {
+      const avatarDataUrl = await resizeAvatar(file);
+      setDraft((current) => ({ ...current, avatar_url: avatarDataUrl }));
+      setStatus("头像已选择，保存资料后生效。");
+    } catch {
+      setStatus("头像处理失败，请换一张图片试试。");
+    }
   }
 
   async function sendEmailLink(event: FormEvent<HTMLFormElement>) {
@@ -632,10 +654,10 @@ export function PointsApp() {
             <PanelTitle icon={<UserRound size={18} />} title="账户资料" />
             <div className="profile-overview">
               <div className="profile-preview">
-                <span className={draft.avatar_url ? `profile-avatar ${draft.avatar_url}` : "profile-avatar empty"} />
+                <AvatarPreview className="profile-avatar" value={draft.avatar_url} />
                 <div>
                   <strong>{draft.nickname.trim() || "设置你的公开昵称"}</strong>
-                  <small>{draft.gender ? `${genderLabel(draft.gender)} · ${selectedAvatar?.label || "Avatar"}` : "头像、昵称、性别完成后激活账户资料"}</small>
+                  <small>{draft.gender ? `${genderLabel(draft.gender)} · 自定义头像` : "上传头像、设置昵称和性别后激活账户资料"}</small>
                 </div>
               </div>
               <div className={profileComplete ? "profile-score ready" : "profile-score"}>
@@ -649,19 +671,16 @@ export function PointsApp() {
               <CheckItem done={Boolean(draft.gender)} label="性别" />
             </div>
             <form className="profile-form" onSubmit={saveProfile}>
-              <div className="avatar-grid" role="radiogroup" aria-label="头像">
-                {avatarOptions.map((avatar) => (
-                  <button
-                    className={draft.avatar_url === avatar.value ? "selected" : ""}
-                    disabled={!wallet || busy}
-                    key={avatar.value}
-                    onClick={() => setDraft((current) => ({ ...current, avatar_url: avatar.value }))}
-                    type="button"
-                  >
-                    <span className={`avatar-dot ${avatar.value}`} />
-                    {avatar.label}
-                  </button>
-                ))}
+              <div className="avatar-upload-card">
+                <AvatarPreview className="upload-avatar" value={draft.avatar_url} />
+                <div>
+                  <strong>上传头像</strong>
+                  <span>支持 JPG、PNG、WebP，系统会自动裁剪成方形头像。</span>
+                </div>
+                <label className={!wallet || busy ? "upload-button disabled" : "upload-button"}>
+                  选择图片
+                  <input accept="image/png,image/jpeg,image/webp" disabled={!wallet || busy} onChange={handleAvatarUpload} type="file" />
+                </label>
               </div>
               <div className="form-grid">
                 <label>
@@ -832,6 +851,14 @@ function PanelTitle({ icon, meta, title }: { icon?: ReactNode; meta?: string; ti
   );
 }
 
+function AvatarPreview({ className, value }: { className: string; value: string }) {
+  if (value && (value.startsWith("data:image/") || value.startsWith("http"))) {
+    return <img alt="" className={className} src={value} />;
+  }
+
+  return <span className={value ? `${className} ${value}` : `${className} empty`} />;
+}
+
 function genderLabel(value: ProfileDraft["gender"]) {
   const labels: Record<Exclude<ProfileDraft["gender"], "">, string> = {
     female: "女",
@@ -840,6 +867,40 @@ function genderLabel(value: ProfileDraft["gender"]) {
   };
 
   return value ? labels[value] : "";
+}
+
+function resizeAvatar(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      const size = Math.min(image.naturalWidth, image.naturalHeight);
+      const sourceX = Math.round((image.naturalWidth - size) / 2);
+      const sourceY = Math.round((image.naturalHeight - size) / 2);
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("Canvas is not available."));
+        return;
+      }
+
+      context.drawImage(image, sourceX, sourceY, size, size, 0, 0, 256, 256);
+      resolve(canvas.toDataURL("image/jpeg", 0.84));
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Image could not be loaded."));
+    };
+
+    image.src = objectUrl;
+  });
 }
 
 function SomniaMark() {

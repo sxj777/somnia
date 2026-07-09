@@ -70,13 +70,6 @@ export const streakRewards = [
   { days: 365, points: 5000 }
 ];
 
-export const avatarOptions = [
-  { value: "avatar-night", label: "Night" },
-  { value: "avatar-signal", label: "Signal" },
-  { value: "avatar-sun", label: "Sun" },
-  { value: "avatar-field", label: "Field" }
-];
-
 export function normalizeAddress(value: string) {
   return value.trim().toLowerCase();
 }
