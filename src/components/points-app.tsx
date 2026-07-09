@@ -2,7 +2,6 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
-  BadgeCheck,
   CalendarCheck2,
   CheckCircle2,
   Copy,
@@ -25,7 +24,6 @@ import {
   isProfileComplete,
   normalizeAddress,
   pointRules,
-  shortAddress,
   streakRewards,
   todayKey,
   type Checkin,
@@ -680,20 +678,29 @@ export function PointsApp() {
           </div>
         </section>
 
-        <section className="account-status-panel" aria-label="账户状态">
-          <div className="status-orb" aria-label={`账户状态完成 ${completedSteps} / 3`}>
-            <span className={wallet ? "status-segment done" : "status-segment"} />
-            <span className={profile?.email_verified ? "status-segment done" : "status-segment"} />
-            <span className={profileComplete ? "status-segment done" : "status-segment"} />
-            <div className="status-orb-center">
-              <strong>{completedSteps}/3</strong>
-              <small>账户状态</small>
-            </div>
-          </div>
+        <section id="overview" className="overview-grid">
+          <article className="account-overview-panel">
+            <div className="account-overview-main">
+              <div className="status-orb" aria-label={`账户状态完成 ${completedSteps} / 3`}>
+                <span className={wallet ? "status-segment done" : "status-segment"} />
+                <span className={profile?.email_verified ? "status-segment done" : "status-segment"} />
+                <span className={profileComplete ? "status-segment done" : "status-segment"} />
+                <div className="status-orb-center">
+                  <strong>{completedSteps}/3</strong>
+                  <small>账户状态</small>
+                </div>
+              </div>
 
-          <div className="account-status-content">
-            <span>账户状态</span>
-            <strong>{completedSteps === 3 ? "账户已完成" : "账户待完成"}</strong>
+              <div className="overview-points">
+                <span>Somnia Points</span>
+                <div>
+                  <strong>{totalPoints}</strong>
+                  <b>PTS</b>
+                </div>
+                <small>{completedSteps === 3 ? "账户已完成" : "账户待完成"}</small>
+              </div>
+            </div>
+
             <div className="account-status-list">
               <span className={wallet ? "done" : "pending"}>
                 {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
@@ -708,54 +715,54 @@ export function PointsApp() {
                 账户资料完成
               </span>
             </div>
-          </div>
-        </section>
 
-        <section id="overview" className="overview-grid">
-          <article className="balance-panel">
-            <div className="balance-top">
-              <span>Somnia Points</span>
-              <BadgeCheck size={19} />
-            </div>
-            <div className="balance-number-row">
-              <strong className="balance-value">{totalPoints}</strong>
-              <span>PTS</span>
-            </div>
-            <div className="progress-block">
+            <div className="overview-stat-row">
               <div>
                 <span>账户完成度</span>
-                <b>{completionPercent}%</b>
-              </div>
-              <div className="progress-track" aria-hidden="true">
-                <span style={{ width: `${completionPercent}%` }} />
-              </div>
-            </div>
-            <div className="balance-stat-row">
-              <div>
-                <span>已完成任务</span>
-                <strong>{completedSteps}</strong>
+                <strong>{completionPercent}%</strong>
               </div>
               <div>
-                <span>连续签到</span>
-                <strong>{currentStreak}</strong>
-              </div>
-              <div>
-                <span>流水记录</span>
+                <span>积分流水</span>
                 <strong>{ledger.length}</strong>
               </div>
             </div>
           </article>
 
-          <article className="identity-panel">
-            <PanelTitle icon={<Wallet size={18} />} meta={busy ? "同步中" : profile ? "已创建" : "等待连接"} title="账户身份" />
-            <div className={wallet ? "wallet-value" : "wallet-value pending"}>{wallet ? shortAddress(wallet) : "等待钱包连接"}</div>
-            <p>{status}</p>
-            <div className="identity-checks">
-              <CheckItem done={Boolean(wallet)} label="钱包已连接" />
-              <CheckItem done={Boolean(profile?.email_verified)} label="邮箱已绑定" />
-              <CheckItem done={profileComplete} label="资料已完成" />
-              <CheckItem done={Boolean(checkedInToday)} label="今日已签到" />
+          <article className="panel checkin-panel overview-checkin">
+            <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
+            <div className="checkin-card">
+              <div className="checkin-hero">
+                <div>
+                  <span>当前连续</span>
+                  <strong>
+                    {currentStreak}
+                    <small>天</small>
+                  </strong>
+                </div>
+                <b className={checkedInToday ? "today-state done" : "today-state"}>{checkedInToday ? "今日已完成" : "今日待签到"}</b>
+              </div>
+              <div className="checkin-week" aria-label="7 天签到进度">
+                {Array.from({ length: 7 }, (_, index) => (
+                  <span className={index < Math.min(currentStreak, 7) ? "done" : ""} key={index} />
+                ))}
+              </div>
+              <div className="checkin-target">
+                <div>
+                  <span>下个奖励</span>
+                  <strong>
+                    {streakTarget} 天 / +{nextStreakReward?.points || 0}
+                  </strong>
+                </div>
+                <small>{daysToNextReward ? `还差 ${daysToNextReward} 天` : "奖励节点已达成"}</small>
+              </div>
+              <div className="checkin-progress" aria-hidden="true">
+                <span style={{ width: `${streakProgress}%` }} />
+              </div>
+              <p>{accountReady ? "每天签到增加 10 积分，连续签到会触发额外奖励。" : "完成邮箱绑定和账户资料后，就可以开始每日签到。"}</p>
             </div>
+            <button className="primary-action checkin-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
+              {checkedInToday ? "今天已签到" : "签到"}
+            </button>
           </article>
         </section>
 
@@ -867,42 +874,6 @@ export function PointsApp() {
               </form>
             </article>
 
-            <article className="panel checkin-panel">
-              <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
-              <div className="checkin-card">
-                <div className="checkin-hero">
-                  <div>
-                    <span>当前连续</span>
-                    <strong>
-                      {currentStreak}
-                      <small>天</small>
-                    </strong>
-                  </div>
-                  <b className={checkedInToday ? "today-state done" : "today-state"}>{checkedInToday ? "今日已完成" : "今日待签到"}</b>
-                </div>
-                <div className="checkin-week" aria-label="7 天签到进度">
-                  {Array.from({ length: 7 }, (_, index) => (
-                    <span className={index < Math.min(currentStreak, 7) ? "done" : ""} key={index} />
-                  ))}
-                </div>
-                <div className="checkin-target">
-                  <div>
-                    <span>下个奖励</span>
-                    <strong>
-                      {streakTarget} 天 / +{nextStreakReward?.points || 0}
-                    </strong>
-                  </div>
-                  <small>{daysToNextReward ? `还差 ${daysToNextReward} 天` : "奖励节点已达成"}</small>
-                </div>
-                <div className="checkin-progress" aria-hidden="true">
-                  <span style={{ width: `${streakProgress}%` }} />
-                </div>
-                <p>{accountReady ? "每天签到增加 10 积分，连续签到会触发额外奖励。" : "完成邮箱绑定和账户资料后，就可以开始每日签到。"}</p>
-              </div>
-              <button className="primary-action checkin-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
-                {checkedInToday ? "今天已签到" : "签到"}
-              </button>
-            </article>
           </aside>
         </section>
 
