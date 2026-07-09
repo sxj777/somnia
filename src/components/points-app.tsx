@@ -76,7 +76,6 @@ export function PointsApp() {
   const profileComplete = isProfileComplete(profile);
   const accountReady = Boolean(profile?.email_verified && profileComplete);
   const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
-  const totalSteps = 4;
   const completionPercent = Math.round((completedSteps / 4) * 100);
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
@@ -531,29 +530,39 @@ export function PointsApp() {
       <section className="main-stage">
         <section className="intro-band">
           <div>
-            <p className="eyebrow">Production MVP</p>
-            <h1>Somnia Points Account</h1>
-            <span className="top-subtitle">围绕钱包身份、邮箱验证、账户资料、每日签到和邀请建立的积分账户系统。</span>
+            <p className="eyebrow">Account Infrastructure</p>
+            <h1>Somnia Points</h1>
+            <span className="top-subtitle">一个围绕钱包身份、邮箱验证、账户资料、每日签到和邀请建立的积分账户中心。</span>
           </div>
           <div className="intro-note">
-            <span>当前范围</span>
-            <strong>只做账户与积分</strong>
-            <p>暂不包含 Dream、排行榜、等级和积分消费，先把账户系统做稳。</p>
+            <span>当前产品范围</span>
+            <strong>账户与积分核心系统</strong>
+            <p>暂不开放 Dream、排行榜、等级和积分消费，先把账户、奖励和记录做稳。</p>
+            <div className="note-grid">
+              <div>
+                <small>Identity</small>
+                <b>{wallet ? "Wallet Linked" : "Wallet Required"}</b>
+              </div>
+              <div>
+                <small>Database</small>
+                <b>{isSupabaseConfigured ? "Live" : "Config Needed"}</b>
+              </div>
+            </div>
           </div>
         </section>
 
         <section className="command-strip" aria-label="系统状态">
           <div>
-            <span>System Scope</span>
-            <strong>Account + Points</strong>
+            <span>Identity Gate</span>
+            <strong>Wallet + Email + Profile</strong>
           </div>
           <div>
-            <span>Database</span>
-            <strong>{isSupabaseConfigured ? "Supabase Connected" : "Config Needed"}</strong>
-          </div>
-          <div>
-            <span>Reward Mode</span>
+            <span>Reward Policy</span>
             <strong>One-time + Daily</strong>
+          </div>
+          <div>
+            <span>Account Status</span>
+            <strong>{accountReady ? "Ready to Check In" : "Setup Required"}</strong>
           </div>
         </section>
 
@@ -563,7 +572,10 @@ export function PointsApp() {
               <span>Somnia Points</span>
               <BadgeCheck size={19} />
             </div>
-            <strong className="balance-value">{totalPoints}</strong>
+            <div className="balance-number-row">
+              <strong className="balance-value">{totalPoints}</strong>
+              <span>PTS</span>
+            </div>
             <div className="progress-block">
               <div>
                 <span>账户完成度</span>
