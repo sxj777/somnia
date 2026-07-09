@@ -557,40 +557,56 @@ export function PointsApp() {
 
       <section className="main-stage">
         <section className="intro-band">
-          <div>
+          <div className="intro-copy">
             <p className="eyebrow">Account Infrastructure</p>
             <h1>Somnia Points</h1>
             <span className="top-subtitle">一个围绕钱包身份、邮箱验证、账户资料、每日签到和邀请建立的积分账户中心。</span>
+            <div className="intro-highlights" aria-label="积分账户核心能力">
+              <div>
+                <span><Wallet size={15} />身份准入</span>
+                <strong>Wallet · Email · Profile</strong>
+              </div>
+              <div>
+                <span><BadgeCheck size={15} />奖励机制</span>
+                <strong>一次性任务 + 每日签到</strong>
+              </div>
+              <div>
+                <span><Users size={15} />邀请条件</span>
+                <strong>好友完成账户后发放</strong>
+              </div>
+            </div>
           </div>
           <div className="intro-note">
-            <span>当前产品范围</span>
+            <div className="scope-head">
+              <span>当前产品范围</span>
+              <b>{isSupabaseConfigured ? "Database Live" : "Config Needed"}</b>
+            </div>
             <strong>账户与积分核心系统</strong>
             <p>暂不开放 Dream、排行榜、等级和积分消费，先把账户、奖励和记录做稳。</p>
-            <div className="note-grid">
-              <div>
-                <small>Identity</small>
-                <b>{wallet ? "Wallet Linked" : "Wallet Required"}</b>
-              </div>
-              <div>
-                <small>Database</small>
-                <b>{isSupabaseConfigured ? "Live" : "Config Needed"}</b>
-              </div>
+            <div className="scope-list">
+              <span><CheckCircle2 size={14} />钱包连接与账户创建</span>
+              <span><CheckCircle2 size={14} />邮箱验证与资料完成</span>
+              <span><CheckCircle2 size={14} />签到、邀请、积分流水</span>
             </div>
           </div>
         </section>
 
         <section className="command-strip" aria-label="系统状态">
           <div>
-            <span>Identity Gate</span>
-            <strong>Wallet + Email + Profile</strong>
+            <span>Account Progress</span>
+            <strong>{completionPercent}%</strong>
+            <div className="metric-meter" aria-hidden="true"><i style={{ width: `${completionPercent}%` }} /></div>
+            <small>Wallet / Email / Profile / Daily</small>
           </div>
           <div>
-            <span>Reward Policy</span>
-            <strong>One-time + Daily</strong>
+            <span>Points Balance</span>
+            <strong>{totalPoints} PTS</strong>
+            <small>实时读取积分流水合计</small>
           </div>
           <div>
-            <span>Account Status</span>
-            <strong>{accountReady ? "Ready to Check In" : "Setup Required"}</strong>
+            <span>Check-in Streak</span>
+            <strong>{currentStreak} Days</strong>
+            <small>{checkedInToday ? "今天已签到" : "今天还可以签到"}</small>
           </div>
         </section>
 
