@@ -557,64 +557,147 @@ export function PointsApp() {
       </header>
 
       <section className="main-stage">
-        <section className="intro-band">
-          <div className="intro-copy">
+        <section className="intro-band reward-hero">
+          <div className="reward-hero-head">
             <p className="eyebrow">Account Infrastructure</p>
             <h1>Somnia Points</h1>
-            <span className="top-subtitle">一个围绕钱包身份、邮箱验证、账户资料、每日签到和邀请建立的积分账户中心。</span>
-            <div className="intro-highlights" aria-label="积分账户核心能力">
-              <div>
-                <span><Wallet size={15} />身份准入</span>
-                <strong>Wallet · Email · Profile</strong>
-              </div>
-              <div>
-                <span><BadgeCheck size={15} />奖励机制</span>
-                <strong>一次性任务 + 每日签到</strong>
-              </div>
-              <div>
-                <span><Users size={15} />邀请条件</span>
-                <strong>好友完成账户后发放</strong>
-              </div>
-            </div>
+            <span className="top-subtitle">完成账户任务，领取 Somnia Points。</span>
           </div>
-          <div className="intro-note">
-            <div className="scope-head">
-              <span>账户状态</span>
-            </div>
-            <strong>{accountReady ? "账户已完成" : "账户待完成"}</strong>
-            <div className="scope-list account-status-list">
-              <span className={wallet ? "done" : "pending"}>
-                {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-                钱包连接
-              </span>
-              <span className={profile?.email_verified ? "done" : "pending"}>
-                {profile?.email_verified ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-                邮箱绑定
-              </span>
-              <span className={profileComplete ? "done" : "pending"}>
-                {profileComplete ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-                账户资料完成
-              </span>
+
+          <div className="reward-carousel" aria-label="积分奖励图片滚动">
+            <div className="reward-track">
+              <article className="reward-slide wallet">
+                <div className="reward-visual">
+                  <Wallet size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 01</span>
+                  <strong>连接钱包</strong>
+                  <b>+10 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide email">
+                <div className="reward-visual">
+                  <Mail size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 02</span>
+                  <strong>绑定邮箱</strong>
+                  <b>+20 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide profile">
+                <div className="reward-visual">
+                  <UserRound size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 03</span>
+                  <strong>完成账户资料</strong>
+                  <b>+30 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide checkin">
+                <div className="reward-visual">
+                  <CalendarCheck2 size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 04</span>
+                  <strong>每日签到</strong>
+                  <b>+10 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide invite">
+                <div className="reward-visual">
+                  <Users size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 05</span>
+                  <strong>邀请好友</strong>
+                  <b>+50 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide wallet" aria-hidden="true">
+                <div className="reward-visual">
+                  <Wallet size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 01</span>
+                  <strong>连接钱包</strong>
+                  <b>+10 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide email" aria-hidden="true">
+                <div className="reward-visual">
+                  <Mail size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 02</span>
+                  <strong>绑定邮箱</strong>
+                  <b>+20 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide profile" aria-hidden="true">
+                <div className="reward-visual">
+                  <UserRound size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 03</span>
+                  <strong>完成账户资料</strong>
+                  <b>+30 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide checkin" aria-hidden="true">
+                <div className="reward-visual">
+                  <CalendarCheck2 size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 04</span>
+                  <strong>每日签到</strong>
+                  <b>+10 PTS</b>
+                </div>
+              </article>
+              <article className="reward-slide invite" aria-hidden="true">
+                <div className="reward-visual">
+                  <Users size={34} />
+                  <i />
+                </div>
+                <div>
+                  <span>STEP 05</span>
+                  <strong>邀请好友</strong>
+                  <b>+50 PTS</b>
+                </div>
+              </article>
             </div>
           </div>
         </section>
 
-        <section className="command-strip" aria-label="系统状态">
+        <section className="account-status-panel" aria-label="账户状态">
           <div>
-            <span>Account Progress</span>
-            <strong>{completionPercent}%</strong>
-            <div className="metric-meter" aria-hidden="true"><i style={{ width: `${completionPercent}%` }} /></div>
-            <small>Wallet / Email / Profile / Daily</small>
+            <span>账户状态</span>
+            <strong>{accountReady ? "账户已完成" : "账户待完成"}</strong>
           </div>
-          <div>
-            <span>Points Balance</span>
-            <strong>{totalPoints} PTS</strong>
-            <small>实时读取积分流水合计</small>
-          </div>
-          <div>
-            <span>Check-in Streak</span>
-            <strong>{currentStreak} Days</strong>
-            <small>{checkedInToday ? "今天已签到" : "今天还可以签到"}</small>
+          <div className="scope-list account-status-list">
+            <span className={wallet ? "done" : "pending"}>
+              {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+              钱包连接
+            </span>
+            <span className={profile?.email_verified ? "done" : "pending"}>
+              {profile?.email_verified ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+              邮箱绑定
+            </span>
+            <span className={profileComplete ? "done" : "pending"}>
+              {profileComplete ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+              账户资料完成
+            </span>
           </div>
         </section>
 

@@ -201,7 +201,6 @@ a {
 .rail-card span,
 .rail-metrics span,
 .eyebrow,
-.command-strip > div > span,
 .balance-top span,
 .progress-block span,
 .balance-stat-row span,
@@ -267,126 +266,240 @@ a {
 
 .intro-band {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.42fr);
-  gap: 18px;
+  gap: 22px;
   align-items: stretch;
-  min-height: 238px;
+  min-height: 356px;
   padding: 28px;
   border: 1px solid rgba(16, 20, 25, 0.12);
   border-radius: 8px;
   background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.88)),
-    linear-gradient(135deg, rgba(0, 124, 109, 0.08), transparent 42%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.98), rgba(246, 248, 250, 0.9)),
+    linear-gradient(135deg, rgba(0, 124, 109, 0.09), transparent 40%),
+    linear-gradient(315deg, rgba(168, 120, 18, 0.1), transparent 38%),
     linear-gradient(90deg, rgba(16, 20, 25, 0.028) 1px, transparent 1px),
     linear-gradient(180deg, rgba(16, 20, 25, 0.024) 1px, transparent 1px);
-  background-size: auto, auto, 40px 40px, 40px 40px;
+  background-size: auto, auto, auto, 40px 40px, 40px 40px;
   box-shadow: var(--shadow-soft);
 }
 
-.intro-copy {
-  display: grid;
-  align-content: space-between;
+.reward-hero {
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
+.reward-hero-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
   min-width: 0;
+}
+
+.reward-hero-head .top-subtitle {
+  max-width: 560px;
+  margin-top: 8px;
 }
 
 .intro-band h1 {
   margin: 8px 0 0;
+  overflow-wrap: anywhere;
   font-size: clamp(42px, 4.6vw, 72px);
   line-height: 1;
   letter-spacing: 0;
 }
 
-.intro-highlights {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  max-width: 860px;
-  margin-top: 24px;
-}
-
-.intro-highlights > div {
-  display: grid;
-  gap: 7px;
-  min-height: 66px;
-  align-content: center;
-  padding: 0 14px;
-  border: 1px solid rgba(16, 20, 25, 0.09);
+.reward-carousel {
+  position: relative;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
 }
 
-.intro-highlights span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 900;
+.reward-track {
+  display: flex;
+  width: max-content;
+  gap: 14px;
+  animation: reward-scroll 42s linear infinite;
 }
 
-.intro-highlights svg {
-  color: var(--mint);
+.reward-carousel:hover .reward-track {
+  animation-play-state: paused;
 }
 
-.intro-highlights strong {
-  overflow-wrap: anywhere;
-  font-size: 13px;
-  font-weight: 950;
-  line-height: 1.35;
-}
-
-.intro-note {
+.reward-slide {
+  position: relative;
   display: grid;
-  gap: 13px;
-  align-content: space-between;
-  padding: 20px;
-  border: 1px solid rgba(0, 124, 109, 0.26);
+  grid-template-columns: 118px minmax(0, 1fr);
+  width: clamp(300px, 30vw, 410px);
+  min-height: 198px;
+  align-items: center;
+  gap: 18px;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(230, 244, 241, 0.94), rgba(244, 250, 248, 0.92)),
-    var(--mint-soft);
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.16), transparent 25%),
+    linear-gradient(135deg, #11161d, #172029 56%, #0d1116);
+  box-shadow: 0 22px 44px rgba(16, 20, 25, 0.16);
 }
 
-.scope-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.reward-slide::before,
+.reward-slide::after {
+  position: absolute;
+  content: "";
+  border-radius: 999px;
 }
 
-.scope-head span {
-  color: var(--mint);
-  font-size: 12px;
-  font-weight: 950;
+.reward-slide::before {
+  right: -34px;
+  bottom: -54px;
+  width: 156px;
+  height: 156px;
+  background: rgba(255, 255, 255, 0.07);
 }
 
-.scope-head b {
-  display: inline-flex;
-  min-height: 30px;
-  align-items: center;
-  padding: 0 10px;
-  border: 1px solid rgba(0, 124, 109, 0.2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--mint);
+.reward-slide::after {
+  top: 18px;
+  right: 22px;
+  width: 9px;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    -34px 38px 0 rgba(255, 255, 255, 0.2),
+    -86px 8px 0 rgba(255, 255, 255, 0.12);
+}
+
+.reward-slide > div {
+  position: relative;
+  z-index: 1;
+}
+
+.reward-slide span {
+  color: rgba(255, 255, 255, 0.58);
   font-size: 11px;
   font-weight: 950;
-  white-space: nowrap;
 }
 
-.intro-note strong {
+.reward-slide strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.reward-slide b {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8f4ea;
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.reward-visual {
+  display: flex;
+  position: relative;
+  width: 108px;
+  height: 108px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(145deg, rgba(0, 165, 141, 0.94), rgba(0, 124, 109, 0.44));
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 18px 36px rgba(0, 124, 109, 0.26);
+}
+
+.reward-visual i {
+  position: absolute;
+  right: -8px;
+  bottom: 8px;
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(17, 22, 29, 0.92);
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.reward-slide.email .reward-visual {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(145deg, rgba(39, 95, 168, 0.95), rgba(0, 124, 109, 0.45));
+}
+
+.reward-slide.profile .reward-visual {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(145deg, rgba(168, 120, 18, 0.94), rgba(0, 124, 109, 0.5));
+}
+
+.reward-slide.checkin .reward-visual {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(145deg, rgba(0, 165, 141, 0.96), rgba(39, 95, 168, 0.48));
+}
+
+.reward-slide.invite .reward-visual {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(145deg, rgba(168, 79, 69, 0.94), rgba(168, 120, 18, 0.48));
+}
+
+@keyframes reward-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 7px));
+  }
+}
+
+.account-status-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.24fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid rgba(0, 124, 109, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.88)),
+    var(--panel);
+  box-shadow: 0 10px 24px rgba(16, 20, 25, 0.045);
+}
+
+.account-status-panel > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.account-status-panel > div:first-child span {
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.account-status-panel > div:first-child strong {
   font-size: 22px;
   font-weight: 950;
-  line-height: 1.2;
-}
-
-.intro-note p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1.65;
+  line-height: 1.15;
 }
 
 .scope-list {
@@ -414,7 +527,7 @@ a {
 }
 
 .account-status-list {
-  margin-top: 4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .account-status-list span {
@@ -462,6 +575,7 @@ a {
   display: block;
   max-width: 680px;
   margin-top: 10px;
+  overflow-wrap: anywhere;
   color: var(--muted);
   font-size: 14px;
   font-weight: 850;
@@ -506,57 +620,6 @@ a {
   border-color: rgba(0, 124, 109, 0.32);
   background: var(--mint-soft);
   color: var(--mint);
-}
-
-.command-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.command-strip > div {
-  display: grid;
-  gap: 7px;
-  min-height: 96px;
-  align-content: start;
-  padding: 16px 18px;
-  border: 1px solid rgba(16, 20, 25, 0.1);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.86)),
-    var(--panel);
-  box-shadow: 0 10px 24px rgba(16, 20, 25, 0.045);
-}
-
-.command-strip strong {
-  overflow-wrap: anywhere;
-  font-size: 22px;
-  font-weight: 950;
-  line-height: 1.05;
-}
-
-.command-strip small {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1.35;
-}
-
-.metric-meter {
-  width: 100%;
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(16, 20, 25, 0.08);
-}
-
-.metric-meter i {
-  display: block;
-  height: 100%;
-  min-width: 4px;
-  max-width: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--mint), var(--mint-2));
 }
 
 .overview-grid {
@@ -1423,6 +1486,7 @@ button:disabled:hover {
 }
 
 @media (max-width: 980px) {
+  .account-status-panel,
   .overview-grid,
   .content-grid,
   .reward-grid {
@@ -1459,14 +1523,26 @@ button:disabled:hover {
     font-size: 38px;
   }
 
-  .intro-highlights {
-    grid-template-columns: 1fr;
-    margin-top: 18px;
+  .reward-hero-head {
+    display: grid;
+    gap: 8px;
   }
 
-  .scope-head {
-    align-items: flex-start;
-    flex-direction: column;
+  .reward-slide {
+    grid-template-columns: 82px minmax(0, 1fr);
+    width: 286px;
+    min-height: 172px;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .reward-visual {
+    width: 78px;
+    height: 78px;
+  }
+
+  .reward-slide strong {
+    font-size: 20px;
   }
 
   .top-actions {
@@ -1478,7 +1554,7 @@ button:disabled:hover {
     width: 100%;
   }
 
-  .command-strip,
+  .account-status-list,
   .side-nav,
   .rail-metrics,
   .task-strip,
