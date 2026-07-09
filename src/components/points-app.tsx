@@ -75,8 +75,8 @@ export function PointsApp() {
   const checkedInToday = latestCheckin?.checkin_date === todayKey();
   const profileComplete = isProfileComplete(profile);
   const accountReady = Boolean(profile?.email_verified && profileComplete);
-  const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
-  const completionPercent = Math.round((completedSteps / 4) * 100);
+  const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete].filter(Boolean).length;
+  const completionPercent = Math.round((completedSteps / 3) * 100);
   const profileRequiredDone = [Boolean(draft.avatar_url), Boolean(draft.nickname.trim()), Boolean(draft.gender)].filter(Boolean).length;
   const nextStreakReward = streakRewards.find((reward) => reward.days > currentStreak) || streakRewards[streakRewards.length - 1];
   const streakTarget = nextStreakReward?.days || 7;
@@ -681,23 +681,33 @@ export function PointsApp() {
         </section>
 
         <section className="account-status-panel" aria-label="账户状态">
-          <div>
-            <span>账户状态</span>
-            <strong>{accountReady ? "账户已完成" : "账户待完成"}</strong>
+          <div className="status-orb" aria-label={`账户状态完成 ${completedSteps} / 3`}>
+            <span className={wallet ? "status-segment done" : "status-segment"} />
+            <span className={profile?.email_verified ? "status-segment done" : "status-segment"} />
+            <span className={profileComplete ? "status-segment done" : "status-segment"} />
+            <div className="status-orb-center">
+              <strong>{completedSteps}/3</strong>
+              <small>账户状态</small>
+            </div>
           </div>
-          <div className="scope-list account-status-list">
-            <span className={wallet ? "done" : "pending"}>
-              {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-              钱包连接
-            </span>
-            <span className={profile?.email_verified ? "done" : "pending"}>
-              {profile?.email_verified ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-              邮箱绑定
-            </span>
-            <span className={profileComplete ? "done" : "pending"}>
-              {profileComplete ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-              账户资料完成
-            </span>
+
+          <div className="account-status-content">
+            <span>账户状态</span>
+            <strong>{completedSteps === 3 ? "账户已完成" : "账户待完成"}</strong>
+            <div className="account-status-list">
+              <span className={wallet ? "done" : "pending"}>
+                {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                钱包连接
+              </span>
+              <span className={profile?.email_verified ? "done" : "pending"}>
+                {profile?.email_verified ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                邮箱绑定
+              </span>
+              <span className={profileComplete ? "done" : "pending"}>
+                {profileComplete ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                账户资料完成
+              </span>
+            </div>
           </div>
         </section>
 
