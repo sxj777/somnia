@@ -77,6 +77,10 @@ export function PointsApp() {
   const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
   const completionPercent = Math.round((completedSteps / 4) * 100);
   const profileRequiredDone = [Boolean(draft.avatar_url), Boolean(draft.nickname.trim()), Boolean(draft.gender)].filter(Boolean).length;
+  const nextStreakReward = streakRewards.find((reward) => reward.days > currentStreak) || streakRewards[streakRewards.length - 1];
+  const streakTarget = nextStreakReward?.days || 7;
+  const streakProgress = Math.min(100, Math.round((currentStreak / streakTarget) * 100));
+  const daysToNextReward = Math.max(streakTarget - currentStreak, 0);
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
     return `${window.location.origin}/?ref=${profile.invite_code}`;
@@ -746,13 +750,39 @@ export function PointsApp() {
               </form>
             </article>
 
-            <article className="panel compact-panel">
+            <article className="panel checkin-panel">
               <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
-              <div className="checkin-meter">
-                <span>连续签到</span>
-                <strong>{currentStreak}</strong>
+              <div className="checkin-card">
+                <div className="checkin-hero">
+                  <div>
+                    <span>当前连续</span>
+                    <strong>
+                      {currentStreak}
+                      <small>天</small>
+                    </strong>
+                  </div>
+                  <b className={checkedInToday ? "today-state done" : "today-state"}>{checkedInToday ? "今日已完成" : "今日待签到"}</b>
+                </div>
+                <div className="checkin-week" aria-label="7 天签到进度">
+                  {Array.from({ length: 7 }, (_, index) => (
+                    <span className={index < Math.min(currentStreak, 7) ? "done" : ""} key={index} />
+                  ))}
+                </div>
+                <div className="checkin-target">
+                  <div>
+                    <span>下个奖励</span>
+                    <strong>
+                      {streakTarget} 天 / +{nextStreakReward?.points || 0}
+                    </strong>
+                  </div>
+                  <small>{daysToNextReward ? `还差 ${daysToNextReward} 天` : "奖励节点已达成"}</small>
+                </div>
+                <div className="checkin-progress" aria-hidden="true">
+                  <span style={{ width: `${streakProgress}%` }} />
+                </div>
+                <p>{accountReady ? "每天签到增加 10 积分，连续签到会触发额外奖励。" : "完成邮箱绑定和账户资料后，就可以开始每日签到。"}</p>
               </div>
-              <button className="primary-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
+              <button className="primary-action checkin-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
                 {checkedInToday ? "今天已签到" : "签到"}
               </button>
             </article>
