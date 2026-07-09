@@ -725,6 +725,112 @@ a {
   gap: 12px;
 }
 
+.profile-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-preview {
+  display: flex;
+  min-width: 0;
+  min-height: 92px;
+  align-items: center;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid rgba(16, 20, 25, 0.1);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.72)),
+    var(--panel-2);
+}
+
+.profile-preview div {
+  min-width: 0;
+}
+
+.profile-preview strong,
+.profile-preview small {
+  display: block;
+}
+
+.profile-preview strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-preview small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.profile-avatar {
+  display: block;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42), 0 14px 28px rgba(16, 20, 25, 0.1);
+}
+
+.profile-avatar.empty {
+  border: 1px dashed var(--line-strong);
+  background:
+    linear-gradient(90deg, rgba(16, 20, 25, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(16, 20, 25, 0.08) 1px, transparent 1px),
+    #fff;
+  background-size: 12px 12px;
+}
+
+.profile-score {
+  display: grid;
+  min-height: 92px;
+  align-content: center;
+  gap: 6px;
+  padding: 15px;
+  border: 1px solid rgba(168, 120, 18, 0.3);
+  border-radius: 8px;
+  background: var(--gold-soft);
+}
+
+.profile-score.ready {
+  border-color: rgba(0, 124, 109, 0.26);
+  background: var(--mint-soft);
+}
+
+.profile-score span {
+  color: var(--gold);
+  font-size: 26px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.profile-score.ready span {
+  color: var(--mint);
+}
+
+.profile-score strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.45;
+}
+
+.profile-requirements {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1097,6 +1203,8 @@ button:disabled:hover {
   .side-nav,
   .rail-metrics,
   .task-strip,
+  .profile-overview,
+  .profile-requirements,
   .avatar-grid,
   .form-grid,
   .button-row,

@@ -77,6 +77,8 @@ export function PointsApp() {
   const accountReady = Boolean(profile?.email_verified && profileComplete);
   const completedSteps = [Boolean(wallet), Boolean(profile?.email_verified), profileComplete, Boolean(checkedInToday)].filter(Boolean).length;
   const completionPercent = Math.round((completedSteps / 4) * 100);
+  const selectedAvatar = avatarOptions.find((avatar) => avatar.value === draft.avatar_url);
+  const profileRequiredDone = [Boolean(draft.avatar_url), Boolean(draft.nickname.trim()), Boolean(draft.gender)].filter(Boolean).length;
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined" || !profile?.invite_code) return "";
     return `${window.location.origin}/?ref=${profile.invite_code}`;
@@ -627,7 +629,25 @@ export function PointsApp() {
 
         <section id="account" className="content-grid">
           <article className="panel profile-panel">
-            <PanelTitle icon={<UserRound size={18} />} meta="+30" title="账户资料" />
+            <PanelTitle icon={<UserRound size={18} />} title="账户资料" />
+            <div className="profile-overview">
+              <div className="profile-preview">
+                <span className={draft.avatar_url ? `profile-avatar ${draft.avatar_url}` : "profile-avatar empty"} />
+                <div>
+                  <strong>{draft.nickname.trim() || "设置你的公开昵称"}</strong>
+                  <small>{draft.gender ? `${genderLabel(draft.gender)} · ${selectedAvatar?.label || "Avatar"}` : "头像、昵称、性别完成后激活账户资料"}</small>
+                </div>
+              </div>
+              <div className={profileComplete ? "profile-score ready" : "profile-score"}>
+                <span>{profileRequiredDone}/3</span>
+                <strong>{profileComplete ? "资料已锁定账户身份" : "完成必填项领取 30 积分"}</strong>
+              </div>
+            </div>
+            <div className="profile-requirements" aria-label="资料完成项">
+              <CheckItem done={Boolean(draft.avatar_url)} label="头像" />
+              <CheckItem done={Boolean(draft.nickname.trim())} label="昵称" />
+              <CheckItem done={Boolean(draft.gender)} label="性别" />
+            </div>
             <form className="profile-form" onSubmit={saveProfile}>
               <div className="avatar-grid" role="radiogroup" aria-label="头像">
                 {avatarOptions.map((avatar) => (
@@ -810,6 +830,16 @@ function PanelTitle({ icon, meta, title }: { icon?: ReactNode; meta?: string; ti
       {meta ? <small>{meta}</small> : null}
     </div>
   );
+}
+
+function genderLabel(value: ProfileDraft["gender"]) {
+  const labels: Record<Exclude<ProfileDraft["gender"], "">, string> = {
+    female: "女",
+    male: "男",
+    other: "其他"
+  };
+
+  return value ? labels[value] : "";
 }
 
 function SomniaMark() {
