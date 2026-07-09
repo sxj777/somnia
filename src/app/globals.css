@@ -636,6 +636,124 @@ a {
   color: rgba(255, 255, 255, 0.36);
 }
 
+.account-task-hub {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hub-task {
+  display: grid;
+  gap: 12px;
+  min-height: 128px;
+  align-content: space-between;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hub-task.done {
+  border-color: rgba(0, 165, 141, 0.3);
+  background: rgba(0, 165, 141, 0.12);
+}
+
+.hub-task-head,
+.hub-profile-row,
+.hub-checkin-row,
+.hub-email-form > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hub-task-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.hub-task-head svg {
+  color: var(--mint-2);
+}
+
+.hub-task-head b {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.hub-email-form {
+  display: grid;
+  gap: 8px;
+}
+
+.hub-email-form input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.hub-email-form input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.hub-email-form button,
+.hub-checkin-row button,
+.hub-link {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid rgba(0, 165, 141, 0.32);
+  border-radius: 8px;
+  background: rgba(0, 165, 141, 0.16);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.hub-email-form button:disabled,
+.hub-checkin-row button:disabled,
+.hub-link.disabled {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.42);
+  pointer-events: none;
+}
+
+.hub-profile-row span,
+.hub-checkin-row strong {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.hub-checkin-row small {
+  margin-left: 5px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .overview-stat-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -736,14 +854,8 @@ a {
 
 .overview-grid {
   display: grid;
-  grid-template-columns: minmax(340px, 0.62fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 14px;
-}
-
-.overview-checkin {
-  display: grid;
-  min-height: 350px;
-  align-content: space-between;
 }
 
 .balance-panel,
@@ -996,7 +1108,7 @@ a {
 }
 
 .content-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(326px, 0.55fr);
+  grid-template-columns: 1fr;
 }
 
 .reward-grid {
@@ -1695,6 +1807,8 @@ button:disabled:hover {
   }
 
   .account-status-list,
+  .account-task-hub,
+  .overview-stat-row,
   .side-nav,
   .rail-metrics,
   .task-strip,

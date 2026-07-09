@@ -716,6 +716,56 @@ export function PointsApp() {
               </span>
             </div>
 
+            <div className="account-task-hub">
+              <article className={profile?.email_verified ? "hub-task done" : "hub-task"}>
+                <div className="hub-task-head">
+                  <span><Mail size={16} />邮箱验证</span>
+                  <b>+20</b>
+                </div>
+                <form className="hub-email-form" onSubmit={sendEmailLink}>
+                  <input
+                    disabled={!wallet || busy || Boolean(profile?.email_verified)}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="name@example.com"
+                    type="email"
+                    value={email}
+                  />
+                  <div>
+                    <button disabled={!wallet || busy || Boolean(profile?.email_verified)} type="submit">
+                      发送验证
+                    </button>
+                    <button disabled={!wallet || busy} onClick={claimEmailManually} type="button">
+                      检查
+                    </button>
+                  </div>
+                </form>
+              </article>
+
+              <article className={profileComplete ? "hub-task done" : "hub-task"}>
+                <div className="hub-task-head">
+                  <span><UserRound size={16} />账户资料</span>
+                  <b>+30</b>
+                </div>
+                <div className="hub-profile-row">
+                  <span>{profileRequiredDone}/3</span>
+                  <a className={!wallet ? "hub-link disabled" : "hub-link"} href="#account">完善资料</a>
+                </div>
+              </article>
+
+              <article className={checkedInToday ? "hub-task done" : "hub-task"}>
+                <div className="hub-task-head">
+                  <span><CalendarCheck2 size={16} />每日签到</span>
+                  <b>+10</b>
+                </div>
+                <div className="hub-checkin-row">
+                  <strong>{currentStreak}<small>天连续</small></strong>
+                  <button disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
+                    {checkedInToday ? "已签到" : "签到"}
+                  </button>
+                </div>
+              </article>
+            </div>
+
             <div className="overview-stat-row">
               <div>
                 <span>账户完成度</span>
@@ -727,55 +777,11 @@ export function PointsApp() {
               </div>
             </div>
           </article>
-
-          <article className="panel checkin-panel overview-checkin">
-            <PanelTitle icon={<CalendarCheck2 size={18} />} meta="+10" title="每日签到" />
-            <div className="checkin-card">
-              <div className="checkin-hero">
-                <div>
-                  <span>当前连续</span>
-                  <strong>
-                    {currentStreak}
-                    <small>天</small>
-                  </strong>
-                </div>
-                <b className={checkedInToday ? "today-state done" : "today-state"}>{checkedInToday ? "今日已完成" : "今日待签到"}</b>
-              </div>
-              <div className="checkin-week" aria-label="7 天签到进度">
-                {Array.from({ length: 7 }, (_, index) => (
-                  <span className={index < Math.min(currentStreak, 7) ? "done" : ""} key={index} />
-                ))}
-              </div>
-              <div className="checkin-target">
-                <div>
-                  <span>下个奖励</span>
-                  <strong>
-                    {streakTarget} 天 / +{nextStreakReward?.points || 0}
-                  </strong>
-                </div>
-                <small>{daysToNextReward ? `还差 ${daysToNextReward} 天` : "奖励节点已达成"}</small>
-              </div>
-              <div className="checkin-progress" aria-hidden="true">
-                <span style={{ width: `${streakProgress}%` }} />
-              </div>
-              <p>{accountReady ? "每天签到增加 10 积分，连续签到会触发额外奖励。" : "完成邮箱绑定和账户资料后，就可以开始每日签到。"}</p>
-            </div>
-            <button className="primary-action checkin-action" disabled={!wallet || busy || checkedInToday} onClick={checkIn} type="button">
-              {checkedInToday ? "今天已签到" : "签到"}
-            </button>
-          </article>
         </section>
 
         {!isSupabaseConfigured ? (
           <section className="notice-panel">Supabase 环境变量缺失，请先配置项目 URL 和 anon key。</section>
         ) : null}
-
-        <section className="task-strip" aria-label="积分任务">
-          <StepPill active={Boolean(wallet)} label="连接钱包" value="+10" />
-          <StepPill active={Boolean(profile?.email_verified)} label="绑定邮箱" value="+20" />
-          <StepPill active={profileComplete} label="创建资料" value="+30" />
-          <StepPill active={Boolean(checkedInToday)} label="每日签到" value="+10" />
-        </section>
 
         <section id="account" className="content-grid">
           <article className="panel profile-panel">
@@ -851,30 +857,6 @@ export function PointsApp() {
               </button>
             </form>
           </article>
-
-          <aside className="action-stack">
-            <article className="panel">
-              <PanelTitle icon={<Mail size={18} />} meta="+20" title="邮箱验证" />
-              <form className="stack-form" onSubmit={sendEmailLink}>
-                <input
-                  disabled={!wallet || busy || Boolean(profile?.email_verified)}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="name@example.com"
-                  type="email"
-                  value={email}
-                />
-                <div className="button-row">
-                  <button disabled={!wallet || busy || Boolean(profile?.email_verified)} type="submit">
-                    发送验证邮件
-                  </button>
-                  <button disabled={!wallet || busy} onClick={claimEmailManually} type="button">
-                    检查验证
-                  </button>
-                </div>
-              </form>
-            </article>
-
-          </aside>
         </section>
 
         <section id="rewards" className="reward-grid">
