@@ -413,6 +413,32 @@ a {
   color: var(--mint);
 }
 
+.account-status-list {
+  margin-top: 4px;
+}
+
+.account-status-list span {
+  min-height: 48px;
+  border-color: rgba(16, 20, 25, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.account-status-list span.done {
+  border-color: rgba(0, 124, 109, 0.2);
+}
+
+.account-status-list span.pending {
+  color: var(--muted);
+}
+
+.account-status-list span.done svg {
+  color: var(--mint);
+}
+
+.account-status-list span.pending svg {
+  color: var(--muted-2);
+}
+
 .app-topbar {
   display: flex;
   min-height: 104px;

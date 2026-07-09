@@ -12,7 +12,8 @@ import {
   Trophy,
   UserRound,
   Users,
-  Wallet
+  Wallet,
+  XCircle
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
@@ -578,15 +579,22 @@ export function PointsApp() {
           </div>
           <div className="intro-note">
             <div className="scope-head">
-              <span>当前产品范围</span>
-              <b>{isSupabaseConfigured ? "Database Live" : "Config Needed"}</b>
+              <span>账户状态</span>
             </div>
-            <strong>账户与积分核心系统</strong>
-            <p>暂不开放 Dream、排行榜、等级和积分消费，先把账户、奖励和记录做稳。</p>
-            <div className="scope-list">
-              <span><CheckCircle2 size={14} />钱包连接与账户创建</span>
-              <span><CheckCircle2 size={14} />邮箱验证与资料完成</span>
-              <span><CheckCircle2 size={14} />签到、邀请、积分流水</span>
+            <strong>{accountReady ? "账户已完成" : "账户待完成"}</strong>
+            <div className="scope-list account-status-list">
+              <span className={wallet ? "done" : "pending"}>
+                {wallet ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                钱包连接
+              </span>
+              <span className={profile?.email_verified ? "done" : "pending"}>
+                {profile?.email_verified ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                邮箱绑定
+              </span>
+              <span className={profileComplete ? "done" : "pending"}>
+                {profileComplete ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                账户资料完成
+              </span>
             </div>
           </div>
         </section>
